@@ -1,0 +1,5 @@
+return
+{
+[7]={surface={Top="Studs";Front="Smooth";Bottom="Inlet";Right="Smooth";Left="Smooth";Back="Smooth";};reflectance=0;color={[1]=175.00000476837158;[2]=148.000006377697;[3]=131.00000739097595;};anchored=true;cancollide=true;transparency=0;texture="Wood";position={[1]=-95.39847564697266;[2]=7.406416893005371;[3]=-97.38855743408203;};locked=true;cframe={[1]=-95.39847564697266;[2]=7.406416893005371;[3]=-97.38855743408203;[4]=3.1402978897094727;};shape="Block";size={[1]=6;[2]=4;[3]=0.20000000298023224;};
+[41]={surface={Top="Studs";Front="Smooth";Bottom="Inlet";Right="Smooth";Left="Smooth";Back="Smooth";};reflectance=0;color={[1]=175.00000476837158;[2]=148.000006377697;[3]=131.00000739097595;};anchored=true;cancollide=true;transparency=0;texture="Wood";position={[1]=-88.37744903564453;[2]=4.456348896026611;[3]=-97.3817138671875;};locked=true;cframe={[1]=-88.37744903564453;[2]=4.456348896026611;[3]=-97.3817138671875;[4]=3.140988349914551;};shape="Block";size={[1]=8;[2]=10;[3]=0.20000000298023224;};
+}
