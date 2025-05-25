@@ -1,7 +1,24 @@
+if workspace:FindFirstChild("mosh") then
+workspace:FindFirstChild("mosh"):Destroy()
+end
 local sans = game:GetObjects("rbxassetid://7475737231")[1]
 sans.Parent = workspace
+sans.Name == "mosh"
 sans:PivotTo(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,10,5))
-game.Players.LocalPlayer.Character.Parent = workspace
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local function onCharacterAdded(character)
+    character.Parent = workspace
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+if player.Character then
+    player.Character.Parent = workspace
+end
+
 coroutine.wrap(function()
 local myHuman = sans:FindFirstChildOfClass("Humanoid")
 local myRoot = sans:WaitForChild("HumanoidRootPart")
