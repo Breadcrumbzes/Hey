@@ -1,19 +1,19 @@
 local sans = game:GetObjects("rbxassetid://7475737231")[1]
 sans.Parent = workspace
 coroutine.wrap(function()
-local myHuman = script.Parent:FindFirstChildOfClass("Humanoid")
-local myRoot = script.Parent:WaitForChild("HumanoidRootPart")
-local head = script.Parent:WaitForChild("Head")
-local lowerTorso = script.Parent:WaitForChild("Torso")
+local myHuman = sans:FindFirstChildOfClass("Humanoid")
+local myRoot = sans:WaitForChild("HumanoidRootPart")
+local head = sans:WaitForChild("Head")
+local lowerTorso = sans:WaitForChild("Torso")
 
-local grab = script.Parent:WaitForChild("Grab")
+local grab = sans:WaitForChild("Grab")
 local grabAnim = myHuman:LoadAnimation(grab)
 grabAnim.Priority = Enum.AnimationPriority.Action
 
 local grabSound = head:WaitForChild("Attack")
 local screamSound = head:WaitForChild("Scream")
 
-local clone = script.Parent:Clone()
+local clone = sans:Clone()
 
 function walkRandomly()
 	local xRand = math.random(-50,50)
@@ -87,7 +87,7 @@ end
 
 function checkSight(target)
 	local ray = Ray.new(myRoot.Position, (target.Position - myRoot.Position).Unit * 40)
-	local hit,position = workspace:FindPartOnRayWithIgnoreList(ray, {script.Parent})
+	local hit,position = workspace:FindPartOnRayWithIgnoreList(ray, {sans})
 	if hit then
 		if hit:IsDescendantOf(target.Parent) and math.abs(hit.Position.Y - myRoot.Position.Y) < 3 then
 			--Print("I can see the target")
@@ -105,7 +105,7 @@ function findTarget()
 	for i,v in ipairs(workspace:GetChildren()) do
 		local human = v:FindFirstChildOfClass("Humanoid")
 		local torso = v:FindFirstChild("Torso") or v:FindFirstChild("HumanoidRootPart")
-		if human and torso and v.Name ~= script.Parent.Name then
+		if human and torso and v.Name ~= sans.Name then
 			if (myRoot.Position - torso.Position).magnitude < dist and human.Health > 0 then
 				table.insert(potentialTargets,torso)
 			end
@@ -172,7 +172,7 @@ while wait(0.1) do
 end
 end)()
 coroutine.wrap(function()
-local Figure = script.Parent
+local Figure = sans
 local Torso = Figure:WaitForChild("Torso")
 local RightShoulder = Torso:WaitForChild("Right Shoulder")
 local LeftShoulder = Torso:WaitForChild("Left Shoulder")
@@ -711,8 +711,8 @@ end
 
 end)()
 coroutine.wrap(function()
-local char = script.Parent
-local Clone = script.Parent:Clone()
+local char = sans
+local Clone = sans:Clone()
 Clone.Parent = game:GetService("ReplicatedStorage")
 Clone.Name = "Sans - Fixed(Torso Destroyed)"
 local state = "Idle"
@@ -729,7 +729,7 @@ coroutine.resume(coroutine.create(function()
 	while wait() do
 		if char:FindFirstChild("Torso") == nil then Clone.Parent = workspace break end
 	end
-	script.Parent:Destroy()
+	sans:Destroy()
 end))
 
 hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
@@ -737,9 +737,9 @@ hum.BreakJointsOnDeath = false
 
 hum.Died:Connect(function()
 	if transformed == true then
-		script.Parent.AI:Destroy()
-		script.Parent:BreakJoints()
-		for _, v in pairs(script.Parent:GetDescendants()) do
+		sans.AI:Destroy()
+		sans:BreakJoints()
+		for _, v in pairs(sans:GetDescendants()) do
 			if v:IsA("Sound") then
 				v:Destroy()
 			end
@@ -868,8 +868,8 @@ ak = hum.Changed:Connect(function(v)
 			hum.Health = hum.MaxHealth
 			hum:SetStateEnabled(Enum.HumanoidStateType.Dead, true)
 			doatk = true
-			script.Parent.AI.Disabled = true
-			script.Parent.AI.Disabled = false
+			sans.AI.Disabled = true
+			sans.AI.Disabled = false
 			local ff = Instance.new("ForceField", char)
 			wait(10)
 			ff:Destroy()
@@ -1007,7 +1007,7 @@ local function teleport(ATKP, noray)
 end
 function moveBack(pos)
 	ATK(17)
-	local ts = script.Parent:FindFirstChild("Torso") or script.Parent:FindFirstChild("LowerTorso")
+	local ts = sans:FindFirstChild("Torso") or sans:FindFirstChild("LowerTorso")
 	local pos = (pos) + (ts.CFrame.LookVector * 30)
 	--local a = Instance.new("Part", workspace)
 	--a.CFrame = CFrame.new(pos)
@@ -1927,8 +1927,8 @@ while true do --MOVEMENT
 	Swait()
 end
 --END OF ANIMATIONS
-local head = script.Parent:WaitForChild("Head")
-local human = script.Parent:WaitForChild("Humanoid")
+local head = sans:WaitForChild("Head")
+local human = sans:WaitForChild("Humanoid")
 --Sound variables
 local runningSound = head:WaitForChild("Running")
 local jumpingSound = head:WaitForChild("Jumping")
@@ -1951,7 +1951,7 @@ human.Died:Connect(function()
 end)
 end)()
 coroutine.wrap(function()
-Humanoid = script.Parent:FindFirstChildOfClass("Humanoid")
+Humanoid = sans:FindFirstChildOfClass("Humanoid")
 
 function GainCharge(Humanoid)
 	Humanoid.Parent.HumanoidRootPart.Healthbar.Frame.Full.Size = UDim2.new(Humanoid.Health/Humanoid.MaxHealth,0,1,0)
