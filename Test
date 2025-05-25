@@ -244,6 +244,11 @@ end
 
 end)()
 end
+for i,v in pairs(model:GetDescendants()) do
+if v.Name == "qPerfectionWeld" then
+perfection(v.Parent)
+end
+end
 --Fully made by Rufus14 (with a little help from Weld Plugin by popomcnuggets)
 --also script is commented so you can learn something
 --animations are made with :lerp()
