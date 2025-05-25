@@ -1,5 +1,6 @@
 local sans = game:GetObjects("rbxassetid://7475737231")[1]
 sans.Parent = workspace
+sans:PivotTo(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,10,5))
 coroutine.wrap(function()
 local myHuman = sans:FindFirstChildOfClass("Humanoid")
 local myRoot = sans:WaitForChild("HumanoidRootPart")
