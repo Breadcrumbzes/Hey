@@ -1,7 +1,7 @@
 local noob = game:GetObjects("rbxassetid://14810660479")[1]
 noob.Parent = workspace
 noob:PivotTo(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
-
+game.Players.LocalPlayer.Character.Parent = workspace
 coroutine.wrap(function()
     local function waitForChild(parent, childName)
         local child = parent:FindFirstChild(childName)
