@@ -2612,7 +2612,7 @@ Decal77.Face = Enum.NormalId.Left
 for i,v in pairs(mas:GetChildren()) do
 	v.Parent = workspace
 if v:IsA("Model") then
-v:PivotTo(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame)
+v:PivotTo(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame) + CFrame.new(0,10,5)
 end
 	pcall(function() v:MakeJoints() end)
 end
