@@ -18,362 +18,988 @@ cors = {}
 mas = Instance.new("Model",game:GetService("Lighting"))
 Model0 = Instance.new("Model")
 Part1 = Instance.new("Part")
-SpecialMesh2 = Instance.new("SpecialMesh")
-Camera3 = Instance.new("Camera")
-Part4 = Instance.new("Part")
-SpecialMesh5 = Instance.new("SpecialMesh")
-Sound6 = Instance.new("Sound")
-Part7 = Instance.new("Part")
+ManualWeld2 = Instance.new("ManualWeld")
+ManualWeld3 = Instance.new("ManualWeld")
+ManualWeld4 = Instance.new("ManualWeld")
+ManualWeld5 = Instance.new("ManualWeld")
+SpecialMesh6 = Instance.new("SpecialMesh")
+Folder7 = Instance.new("Folder")
 Sound8 = Instance.new("Sound")
 Sound9 = Instance.new("Sound")
-BodyGyro10 = Instance.new("BodyGyro")
+Script10 = Instance.new("Script")
 Script11 = Instance.new("Script")
-Script12 = Instance.new("Script")
-Script13 = Instance.new("Script")
-SpecialMesh14 = Instance.new("SpecialMesh")
-Part15 = Instance.new("Part")
-SpecialMesh16 = Instance.new("SpecialMesh")
-Part17 = Instance.new("Part")
-SpecialMesh18 = Instance.new("SpecialMesh")
-Part19 = Instance.new("Part")
-SpecialMesh20 = Instance.new("SpecialMesh")
-Part21 = Instance.new("Part")
-SpecialMesh22 = Instance.new("SpecialMesh")
-Model0.Name = "SCP-173"
+Decal12 = Instance.new("Decal")
+Decal13 = Instance.new("Decal")
+Decal14 = Instance.new("Decal")
+Decal15 = Instance.new("Decal")
+Decal16 = Instance.new("Decal")
+Decal17 = Instance.new("Decal")
+Part18 = Instance.new("Part")
+Decal19 = Instance.new("Decal")
+Decal20 = Instance.new("Decal")
+Decal21 = Instance.new("Decal")
+Decal22 = Instance.new("Decal")
+Decal23 = Instance.new("Decal")
+ManualWeld24 = Instance.new("ManualWeld")
+SpecialMesh25 = Instance.new("SpecialMesh")
+Part26 = Instance.new("Part")
+SpecialMesh27 = Instance.new("SpecialMesh")
+Part28 = Instance.new("Part")
+Decal29 = Instance.new("Decal")
+Decal30 = Instance.new("Decal")
+Decal31 = Instance.new("Decal")
+Decal32 = Instance.new("Decal")
+Decal33 = Instance.new("Decal")
+Decal34 = Instance.new("Decal")
+SpecialMesh35 = Instance.new("SpecialMesh")
+Part36 = Instance.new("Part")
+Decal37 = Instance.new("Decal")
+Decal38 = Instance.new("Decal")
+Decal39 = Instance.new("Decal")
+Decal40 = Instance.new("Decal")
+Decal41 = Instance.new("Decal")
+Decal42 = Instance.new("Decal")
+SpecialMesh43 = Instance.new("SpecialMesh")
+Part44 = Instance.new("Part")
+Decal45 = Instance.new("Decal")
+Decal46 = Instance.new("Decal")
+Decal47 = Instance.new("Decal")
+Decal48 = Instance.new("Decal")
+Decal49 = Instance.new("Decal")
+ManualWeld50 = Instance.new("ManualWeld")
+ManualWeld51 = Instance.new("ManualWeld")
+SpecialMesh52 = Instance.new("SpecialMesh")
+Part53 = Instance.new("Part")
+Decal54 = Instance.new("Decal")
+Decal55 = Instance.new("Decal")
+Decal56 = Instance.new("Decal")
+Decal57 = Instance.new("Decal")
+Decal58 = Instance.new("Decal")
+Decal59 = Instance.new("Decal")
+SpecialMesh60 = Instance.new("SpecialMesh")
+Part61 = Instance.new("Part")
+Decal62 = Instance.new("Decal")
+Decal63 = Instance.new("Decal")
+Decal64 = Instance.new("Decal")
+Decal65 = Instance.new("Decal")
+Decal66 = Instance.new("Decal")
+Decal67 = Instance.new("Decal")
+SpecialMesh68 = Instance.new("SpecialMesh")
+Humanoid69 = Instance.new("Humanoid")
+Part70 = Instance.new("Part")
+ManualWeld71 = Instance.new("ManualWeld")
+Script72 = Instance.new("Script")
+Configuration73 = Instance.new("Configuration")
+BoolValue74 = Instance.new("BoolValue")
+NumberValue75 = Instance.new("NumberValue")
+BoolValue76 = Instance.new("BoolValue")
+BoolValue77 = Instance.new("BoolValue")
+BoolValue78 = Instance.new("BoolValue")
+Script79 = Instance.new("Script")
+Model0.Name = "Gomely"
 Model0.Parent = mas
-Part1.Name = "Phys5"
+Part1.Name = "Torso"
 Part1.Parent = Model0
-Part1.CFrame = CFrame.new(-24.9892139, 2.93208075, 80.8507767, -6.33452146e-05, 1.58898172e-09, 1, -1.19373141e-07, 1, 1.58143054e-09, -1, -1.19287023e-07, -6.33452146e-05)
-Part1.Orientation = Vector3.new(0, 90.00399780273438, 0)
-Part1.Position = Vector3.new(-24.989213943481445, 2.9320807456970215, 80.85077667236328)
-Part1.Rotation = Vector3.new(0, 90, 0)
-Part1.Color = Color3.new(0.411765, 0.25098, 0.156863)
-Part1.Transparency = 1
-Part1.Size = Vector3.new(3.75079607963562, 5.55895471572876, 3.2495009899139404)
-Part1.Anchored = true
+Part1.CFrame = CFrame.new(-21.0157318, 23.8991528, 81.4774399, -1.00000191, -5.96053908e-08, -1.1622833e-06, -2.98025711e-08, 1, -1.49010413e-08, 2.32457387e-06, -2.98020026e-08, -1.00000048)
+Part1.Orientation = Vector3.new(0, 180, 0)
+Part1.Position = Vector3.new(-21.015731811523438, 23.899152755737305, 81.4774398803711)
+Part1.Rotation = Vector3.new(180, 0, 180)
+Part1.Size = Vector3.new(3.5999999046325684, 2.4000000953674316, 2)
 Part1.BottomSurface = Enum.SurfaceType.Smooth
-Part1.BrickColor = BrickColor.new("Reddish brown")
-Part1.Material = Enum.Material.Concrete
+Part1.CustomPhysicalProperties = 32, 0.300000012, 0.5, 1, 1
 Part1.TopSurface = Enum.SurfaceType.Smooth
-Part1.brickColor = BrickColor.new("Reddish brown")
 Part1.FormFactor = Enum.FormFactor.Custom
 Part1.formFactor = Enum.FormFactor.Custom
-SpecialMesh2.Parent = Part1
-SpecialMesh2.MeshType = Enum.MeshType.Brick
-Camera3.Name = "ThumbnailCamera"
-Camera3.Parent = Model0
-Camera3.CFrame = CFrame.new(-23.3901901, 5.62259769, -108.205154, 0.845033944, 0.0499678552, 0.532373011, -0, 0.995624185, -0.0934480131, -0.534712851, 0.0789667442, 0.841336071)
-Camera3.CoordinateFrame = CFrame.new(-23.3901901, 5.62259769, -108.205154, 0.845033944, 0.0499678552, 0.532373011, -0, 0.995624185, -0.0934480131, -0.534712851, 0.0789667442, 0.841336071)
-Camera3.FieldOfView = 20
-Camera3.Focus = CFrame.new(-24.4549351, 5.80949354, -109.887825, 1, 0, 0, 0, 1, 0, 0, 0, 1)
-Camera3.focus = CFrame.new(-24.4549351, 5.80949354, -109.887825, 1, 0, 0, 0, 1, 0, 0, 0, 1)
-Part4.Name = "Death"
-Part4.Parent = Model0
-Part4.CFrame = CFrame.new(-24.8979053, 3.96951294, 80.8419876, 1, 8.22937736e-08, 6.24958411e-05, -7.91179104e-08, 1, 3.3589572e-08, -6.24958411e-05, -3.35084671e-08, 1)
-Part4.Orientation = Vector3.new(0, 0.004000000189989805, 0)
-Part4.Position = Vector3.new(-24.897905349731445, 3.969512939453125, 80.84198760986328)
-Part4.Rotation = Vector3.new(0, 0.004000000189989805, 0)
-Part4.Size = Vector3.new(1.9539999961853027, 7.939000129699707, 2.3989999294281006)
-Part4.Reflectance = 1
-SpecialMesh5.Parent = Part4
-SpecialMesh5.MeshId = "rbxassetid://1002732277"
-SpecialMesh5.Scale = Vector3.new(0.3572930693626404, 0.3583422005176544, 0.35763266682624817)
-SpecialMesh5.TextureId = "rbxassetid://1002700043"
-SpecialMesh5.MeshType = Enum.MeshType.FileMesh
-Sound6.Name = "Slide"
-Sound6.Parent = Part4
-Sound6.Looped = true
-Sound6.SoundId = "http://www.roblox.com/asset/?id=149293656"
-Part7.Name = "Face"
-Part7.Parent = Part4
-Part7.CFrame = CFrame.new(-24.8336639, 6.52591801, 80.3723068, 1, 1.59643188e-09, 6.24958411e-05, 1.58153013e-09, 1, 1.63032712e-10, -6.24958411e-05, -7.69111302e-11, 1)
-Part7.Orientation = Vector3.new(0, 0.004000000189989805, 0)
-Part7.Position = Vector3.new(-24.833663940429688, 6.525918006896973, 80.37230682373047)
-Part7.Rotation = Vector3.new(0, 0.004000000189989805, 0)
-Part7.Transparency = 1
-Part7.Size = Vector3.new(1.6100000143051147, 1.4199999570846558, 0.20000004768371582)
-Part7.Anchored = true
-Part7.FormFactor = Enum.FormFactor.Custom
-Part7.formFactor = Enum.FormFactor.Custom
-Sound8.Name = "Kill"
-Sound8.Parent = Part4
-Sound8.SoundId = "http://www.roblox.com/asset/?id=149293645"
-Sound8.Volume = 1
-Sound9.Parent = Part4
-Sound9.SoundId = "rbxassetid://150184965"
-Sound9.Volume = 1
-BodyGyro10.Parent = Part4
-BodyGyro10.MaxTorque = Vector3.new(900000, 0, 900000)
-BodyGyro10.maxTorque = Vector3.new(900000, 0, 900000)
-Script11.Parent = BodyGyro10
+ManualWeld2.Name = "Neck"
+ManualWeld2.Parent = Part1
+ManualWeld2.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, -1)
+ManualWeld2.C1 = CFrame.new(4.57763672e-05, -2.19119215, 0.199951172, -1.00000012, -1.73472348e-18, -0.000345305656, 1.73472389e-18, 1, -8.40903478e-15, 0.000345305656, -8.40903309e-15, -1.00000012)
+ManualWeld2.Part0 = Part1
+ManualWeld2.Part1 = Part18
+ManualWeld2.part1 = Part18
+ManualWeld3.Name = "Right Shoulder"
+ManualWeld3.Parent = Part1
+ManualWeld3.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, -1)
+ManualWeld3.C1 = CFrame.new(-2.20002747, 1.79909897, -0.000183105469, -1.00000024, 0, 4.37139533e-08, 0, 1, 0, -4.37139533e-08, 0, -1.00000024)
+ManualWeld3.Part0 = Part1
+ManualWeld3.Part1 = Part53
+ManualWeld3.part1 = Part53
+ManualWeld4.Name = "Left Shoulder"
+ManualWeld4.Parent = Part1
+ManualWeld4.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, -1)
+ManualWeld4.C1 = CFrame.new(2.19999695, 1.79909897, -0.000122070312, -1.00000024, 0, 4.37139533e-08, 0, 1, 0, -4.37139533e-08, 0, -1.00000024)
+ManualWeld4.Part0 = Part1
+ManualWeld4.Part1 = Part61
+ManualWeld4.part1 = Part61
+ManualWeld5.Name = "Hip Joint"
+ManualWeld5.Parent = Part1
+ManualWeld5.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, -1)
+ManualWeld5.C1 = CFrame.new(-1.52587891e-05, 1.69912386, 0, -1.00000024, 0, 0, 0, 1, 0, 0, 0, -1.00000024)
+ManualWeld5.Part0 = Part1
+ManualWeld5.Part1 = Part44
+ManualWeld5.part1 = Part44
+SpecialMesh6.Parent = Part1
+SpecialMesh6.MeshType = Enum.MeshType.Brick
+Folder7.Name = "Boss fight music"
+Folder7.Parent = Part1
+Sound8.Name = "Boss Fight Intro"
+Sound8.Parent = Folder7
+Sound8.Looped = true
+Sound8.SoundId = "rbxassetid://6258085236"
+Sound9.Name = "Leon Uh Oh"
+Sound9.Parent = Folder7
+Sound9.SoundId = "rbxassetid://5685964606"
+Script10.Name = "Boss fight sounds"
+Script10.Parent = Folder7
+table.insert(cors,sandbox(Script10,function()
+local BossFight = script.Parent["Boss Fight Intro"]
+local UhOh = script.Parent["Leon Uh Oh"]
+wait(3.47)
+UhOh:Play()
+wait(1)
+BossFight:Play()
+end))
+Script11.Name = "INTRUCTIONS"
+Script11.Parent = Folder7
 table.insert(cors,sandbox(Script11,function()
-script.Parent.maxTorque = Vector3.new(4e+009, 0, 4e+009)
+-- Don't do anything and ur good delete this script
 end))
-Script12.Name = "Closer"
-Script12.Parent = Part4
-table.insert(cors,sandbox(Script12,function()
-
-local head = script.Parent
-local sound = head:findFirstChild("Sound")
-
-
-function onTouched(part)
-	local h = part.Parent:findFirstChild("Humanoid")
-	if h~=nil then
-sound:play()
-
+Decal12.Parent = Part1
+Decal12.Texture = "http://www.roblox.com/asset/?id=78741519"
+Decal12.Face = Enum.NormalId.Right
+Decal13.Parent = Part1
+Decal13.Texture = "http://www.roblox.com/asset/?id=78741539"
+Decal13.Face = Enum.NormalId.Left
+Decal14.Parent = Part1
+Decal14.Texture = "http://www.roblox.com/asset/?id=78741441"
+Decal14.Face = Enum.NormalId.Bottom
+Decal15.Parent = Part1
+Decal15.Texture = "http://www.roblox.com/asset/?id=78741569"
+Decal15.Face = Enum.NormalId.Top
+Decal16.Parent = Part1
+Decal16.Texture = "http://www.roblox.com/asset/?id=78741419"
+Decal16.Face = Enum.NormalId.Back
+Decal17.Parent = Part1
+Decal17.Texture = "http://www.roblox.com/asset/?id=78741484"
+Part18.Name = "Head"
+Part18.Parent = Model0
+Part18.CFrame = CFrame.new(-21.0157547, 26.0903454, 81.6773911, -1.00000203, -5.96053908e-08, 0.000344144035, -2.9807719e-08, 1, -1.48907606e-08, -0.00034298125, -2.98020115e-08, -1.0000006)
+Part18.Orientation = Vector3.new(0, 179.97999572753906, 0)
+Part18.Position = Vector3.new(-21.01575469970703, 26.09034538269043, 81.6773910522461)
+Part18.Rotation = Vector3.new(180, 0.019999999552965164, 180)
+Part18.Size = Vector3.new(1.600000023841858, 2, 1.600000023841858)
+Part18.BottomSurface = Enum.SurfaceType.Smooth
+Part18.CustomPhysicalProperties = 32, 0.300000012, 0.5, 1, 1
+Part18.TopSurface = Enum.SurfaceType.Smooth
+Part18.FormFactor = Enum.FormFactor.Custom
+Part18.formFactor = Enum.FormFactor.Custom
+Decal19.Parent = Part18
+Decal19.Texture = "http://www.roblox.com/asset/?id=78742174"
+Decal19.Face = Enum.NormalId.Top
+Decal20.Parent = Part18
+Decal20.Texture = "http://www.roblox.com/asset/?id=78742152"
+Decal20.Face = Enum.NormalId.Right
+Decal21.Parent = Part18
+Decal21.Texture = "http://www.roblox.com/asset/?id=78742121"
+Decal21.Face = Enum.NormalId.Left
+Decal22.Parent = Part18
+Decal22.Texture = "http://www.roblox.com/asset/?id=78742076"
+Decal22.Face = Enum.NormalId.Back
+Decal23.Parent = Part18
+Decal23.Texture = "http://www.roblox.com/asset/?id=78742099"
+ManualWeld24.Name = "Nose Joint"
+ManualWeld24.Parent = Part18
+ManualWeld24.C0 = CFrame.new(0, 0, 0, -1.00000012, -1.73472348e-18, -0.000345305656, 1.73472389e-18, 1, -8.40903478e-15, 0.000345305656, -8.40903309e-15, -1.00000012)
+ManualWeld24.C1 = CFrame.new(-0.000305175781, 0.800020218, 1.00012207, -1.00000024, 0, 4.37139533e-08, 0, 1, 0, -4.37139533e-08, 0, -1.00000024)
+ManualWeld24.Part0 = Part18
+ManualWeld24.Part1 = Part26
+ManualWeld24.part1 = Part26
+SpecialMesh25.Parent = Part18
+SpecialMesh25.MeshType = Enum.MeshType.Brick
+Part26.Name = "Nose"
+Part26.Parent = Model0
+Part26.CFrame = CFrame.new(-21.016058, 25.2903252, 82.6775131, -1.0000025, -5.96053908e-08, -1.20600453e-06, -2.98025888e-08, 1, -1.49010519e-08, 2.3682951e-06, -2.98020026e-08, -1.00000107)
+Part26.Orientation = Vector3.new(0, 180, 0)
+Part26.Position = Vector3.new(-21.01605796813965, 25.290325164794922, 82.6775131225586)
+Part26.Rotation = Vector3.new(180, 0, 180)
+Part26.Color = Color3.new(0.388235, 0.372549, 0.384314)
+Part26.Size = Vector3.new(0.4000000059604645, 0.800000011920929, 0.4000000059604645)
+Part26.BottomSurface = Enum.SurfaceType.Smooth
+Part26.BrickColor = BrickColor.new("Dark stone grey")
+Part26.CustomPhysicalProperties = 32, 0.300000012, 0.5, 1, 1
+Part26.TopSurface = Enum.SurfaceType.Smooth
+Part26.brickColor = BrickColor.new("Dark stone grey")
+Part26.FormFactor = Enum.FormFactor.Custom
+Part26.formFactor = Enum.FormFactor.Custom
+SpecialMesh27.Parent = Part26
+SpecialMesh27.MeshType = Enum.MeshType.Brick
+Part28.Name = "Right Leg"
+Part28.Parent = Model0
+Part28.CFrame = CFrame.new(-21.76581, 20.1000252, 81.4774399, -1.00000298, -5.96053908e-08, 6.18102058e-05, -2.9803541e-08, 1, -1.48991806e-08, -6.0647817e-05, -2.98020026e-08, -1.00000155)
+Part28.Orientation = Vector3.new(0, 179.99600219726562, 0)
+Part28.Position = Vector3.new(-21.765810012817383, 20.100025177001953, 81.4774398803711)
+Part28.Rotation = Vector3.new(180, 0.004000000189989805, 180)
+Part28.Size = Vector3.new(1.2000000476837158, 3.200000047683716, 1.399999976158142)
+Part28.BottomSurface = Enum.SurfaceType.Smooth
+Part28.CanCollide = false
+Part28.CustomPhysicalProperties = 32, 0.300000012, 0.5, 1, 1
+Part28.TopSurface = Enum.SurfaceType.Smooth
+Part28.FormFactor = Enum.FormFactor.Custom
+Part28.formFactor = Enum.FormFactor.Custom
+Decal29.Parent = Part28
+Decal29.Texture = "http://www.roblox.com/asset/?id=78777378"
+Decal29.Face = Enum.NormalId.Top
+Decal30.Parent = Part28
+Decal30.Texture = "http://www.roblox.com/asset/?id=78777357"
+Decal30.Face = Enum.NormalId.Left
+Decal31.Parent = Part28
+Decal31.Texture = "http://www.roblox.com/asset/?id=78777342"
+Decal31.Face = Enum.NormalId.Right
+Decal32.Parent = Part28
+Decal32.Texture = "http://www.roblox.com/asset/?id=78777327"
+Decal33.Parent = Part28
+Decal33.Texture = "http://www.roblox.com/asset/?id=78777308"
+Decal33.Face = Enum.NormalId.Bottom
+Decal34.Parent = Part28
+Decal34.Texture = "http://www.roblox.com/asset/?id=78777293"
+Decal34.Face = Enum.NormalId.Back
+SpecialMesh35.Parent = Part28
+SpecialMesh35.MeshType = Enum.MeshType.Brick
+Part36.Name = "Left Leg"
+Part36.Parent = Model0
+Part36.CFrame = CFrame.new(-20.2658062, 20.0992165, 81.4773788, -1.0000025, -5.96053908e-08, 6.18250779e-05, -2.98035268e-08, 1, -1.48991726e-08, -6.06626927e-05, -2.98020026e-08, -1.00000107)
+Part36.Orientation = Vector3.new(0, 179.99600219726562, 0)
+Part36.Position = Vector3.new(-20.265806198120117, 20.09921646118164, 81.47737884521484)
+Part36.Rotation = Vector3.new(180, 0.004000000189989805, 180)
+Part36.Size = Vector3.new(1.2000000476837158, 3.200000047683716, 1.399999976158142)
+Part36.BottomSurface = Enum.SurfaceType.Smooth
+Part36.CanCollide = false
+Part36.CustomPhysicalProperties = 32, 0.300000012, 0.5, 1, 1
+Part36.TopSurface = Enum.SurfaceType.Smooth
+Part36.FormFactor = Enum.FormFactor.Custom
+Part36.formFactor = Enum.FormFactor.Custom
+Decal37.Parent = Part36
+Decal37.Texture = "http://www.roblox.com/asset/?id=78775556"
+Decal37.Face = Enum.NormalId.Top
+Decal38.Parent = Part36
+Decal38.Texture = "http://www.roblox.com/asset/?id=78777327"
+Decal39.Parent = Part36
+Decal39.Texture = "http://www.roblox.com/asset/?id=78777327"
+Decal39.Face = Enum.NormalId.Left
+Decal40.Parent = Part36
+Decal40.Texture = "http://www.roblox.com/asset/?id=78777327"
+Decal40.Face = Enum.NormalId.Right
+Decal41.Parent = Part36
+Decal41.Texture = "http://www.roblox.com/asset/?id=78775487"
+Decal41.Face = Enum.NormalId.Bottom
+Decal42.Parent = Part36
+Decal42.Texture = "http://www.roblox.com/asset/?id=78777327"
+Decal42.Face = Enum.NormalId.Back
+SpecialMesh43.Parent = Part36
+SpecialMesh43.MeshType = Enum.MeshType.Brick
+Part44.Name = "Hip"
+Part44.Parent = Model0
+Part44.CFrame = CFrame.new(-21.0157471, 22.2000294, 81.4774399, -1.00000215, -5.96053908e-08, -1.16228352e-06, -2.98025782e-08, 1, -1.49010448e-08, 2.32457433e-06, -2.98020026e-08, -1.00000072)
+Part44.Orientation = Vector3.new(0, 180, 0)
+Part44.Position = Vector3.new(-21.0157470703125, 22.200029373168945, 81.4774398803711)
+Part44.Rotation = Vector3.new(180, 0, 180)
+Part44.Size = Vector3.new(1.600000023841858, 1, 1.2000000476837158)
+Part44.BottomSurface = Enum.SurfaceType.Smooth
+Part44.CustomPhysicalProperties = 32, 0.300000012, 0.5, 1, 1
+Part44.TopSurface = Enum.SurfaceType.Smooth
+Part44.FormFactor = Enum.FormFactor.Custom
+Part44.formFactor = Enum.FormFactor.Custom
+Decal45.Parent = Part44
+Decal45.Texture = "http://www.roblox.com/asset/?id=78743396"
+Decal45.Face = Enum.NormalId.Left
+Decal46.Parent = Part44
+Decal46.Texture = "http://www.roblox.com/asset/?id=78743351"
+Decal46.Face = Enum.NormalId.Right
+Decal47.Parent = Part44
+Decal47.Texture = "http://www.roblox.com/asset/?id=78743335"
+Decal48.Parent = Part44
+Decal48.Texture = "http://www.roblox.com/asset/?id=78743321"
+Decal48.Face = Enum.NormalId.Bottom
+Decal49.Parent = Part44
+Decal49.Texture = "http://www.roblox.com/asset/?id=78743302"
+Decal49.Face = Enum.NormalId.Back
+ManualWeld50.Name = "Left Hip"
+ManualWeld50.Parent = Part44
+ManualWeld50.C0 = CFrame.new(0, 0, 0, -1.00000024, 0, 0, 0, 1, 0, 0, 0, -1.00000024)
+ManualWeld50.C1 = CFrame.new(0.749938965, 2.10081387, -0.000106811523, -1.00000012, 0, -6.29872084e-05, 0, 1, 0, 6.29872084e-05, 0, -1.00000012)
+ManualWeld50.Part0 = Part44
+ManualWeld50.Part1 = Part36
+ManualWeld50.part1 = Part36
+ManualWeld51.Name = "Right Hip"
+ManualWeld51.Parent = Part44
+ManualWeld51.C0 = CFrame.new(0, 0, 0, -1.00000048, 0, 0, 0, 1, 0, 0, 0, -1.00000048)
+ManualWeld51.C1 = CFrame.new(-0.750061035, 2.10000515, 4.57763672e-05, -1.00000036, 0, -6.29723218e-05, 0, 1, 0, 6.29723218e-05, 0, -1.00000036)
+ManualWeld51.Part0 = Part44
+ManualWeld51.Part1 = Part28
+ManualWeld51.part1 = Part28
+SpecialMesh52.Parent = Part44
+SpecialMesh52.MeshType = Enum.MeshType.Brick
+Part53.Name = "Right Arm"
+Part53.Parent = Model0
+Part53.CFrame = CFrame.new(-23.2157631, 22.1000538, 81.4772644, -1.00000215, -5.96053908e-08, -1.20599759e-06, -2.98025782e-08, 1, -1.49010457e-08, 2.36828828e-06, -2.98020026e-08, -1.00000072)
+Part53.Orientation = Vector3.new(0, 180, 0)
+Part53.Position = Vector3.new(-23.215763092041016, 22.100053787231445, 81.47726440429688)
+Part53.Rotation = Vector3.new(180, 0, 180)
+Part53.Size = Vector3.new(0.800000011920929, 6, 1.2000000476837158)
+Part53.BottomSurface = Enum.SurfaceType.Smooth
+Part53.CanCollide = false
+Part53.CustomPhysicalProperties = 32, 0.300000012, 0.5, 1, 1
+Part53.TopSurface = Enum.SurfaceType.Smooth
+Part53.FormFactor = Enum.FormFactor.Custom
+Part53.formFactor = Enum.FormFactor.Custom
+Decal54.Parent = Part53
+Decal54.Texture = "http://www.roblox.com/asset/?id=78765555"
+Decal54.Face = Enum.NormalId.Bottom
+Decal55.Parent = Part53
+Decal55.Texture = "http://www.roblox.com/asset/?id=78765539"
+Decal55.Face = Enum.NormalId.Back
+Decal56.Parent = Part53
+Decal56.Texture = "http://www.roblox.com/asset/?id=78765591"
+Decal56.Face = Enum.NormalId.Right
+Decal57.Parent = Part53
+Decal57.Texture = "http://www.roblox.com/asset/?id=78765571"
+Decal58.Parent = Part53
+Decal58.Texture = "http://www.roblox.com/asset/?id=78765606"
+Decal58.Face = Enum.NormalId.Left
+Decal59.Parent = Part53
+Decal59.Texture = "http://www.roblox.com/asset/?id=78765624"
+Decal59.Face = Enum.NormalId.Top
+SpecialMesh60.Parent = Part53
+SpecialMesh60.MeshType = Enum.MeshType.Brick
+Part61.Name = "Left Arm"
+Part61.Parent = Model0
+Part61.CFrame = CFrame.new(-18.815731, 22.1000538, 81.4773102, -1.00000215, -5.96053908e-08, -1.20599759e-06, -2.98025782e-08, 1, -1.49010457e-08, 2.36828828e-06, -2.98020026e-08, -1.00000072)
+Part61.Orientation = Vector3.new(0, 180, 0)
+Part61.Position = Vector3.new(-18.815731048583984, 22.100053787231445, 81.47731018066406)
+Part61.Rotation = Vector3.new(180, 0, 180)
+Part61.Size = Vector3.new(0.800000011920929, 6, 1.2000000476837158)
+Part61.BottomSurface = Enum.SurfaceType.Smooth
+Part61.CanCollide = false
+Part61.CustomPhysicalProperties = 32, 0.300000012, 0.5, 1, 1
+Part61.TopSurface = Enum.SurfaceType.Smooth
+Part61.FormFactor = Enum.FormFactor.Custom
+Part61.formFactor = Enum.FormFactor.Custom
+Decal62.Parent = Part61
+Decal62.Texture = "http://www.roblox.com/asset/?id=78761910"
+Decal62.Face = Enum.NormalId.Top
+Decal63.Parent = Part61
+Decal63.Texture = "http://www.roblox.com/asset/?id=78761887"
+Decal63.Face = Enum.NormalId.Left
+Decal64.Parent = Part61
+Decal64.Texture = "http://www.roblox.com/asset/?id=78761856"
+Decal64.Face = Enum.NormalId.Right
+Decal65.Parent = Part61
+Decal65.Texture = "http://www.roblox.com/asset/?id=78765571"
+Decal66.Parent = Part61
+Decal66.Texture = "http://www.roblox.com/asset/?id=78765571"
+Decal66.Face = Enum.NormalId.Back
+Decal67.Parent = Part61
+Decal67.Texture = "http://www.roblox.com/asset/?id=78761780"
+Decal67.Face = Enum.NormalId.Bottom
+SpecialMesh68.Parent = Part61
+SpecialMesh68.MeshType = Enum.MeshType.Brick
+Humanoid69.Parent = Model0
+Humanoid69.Health = 1000
+Humanoid69.HipHeight = -1.2000000476837158
+Humanoid69.LeftLeg = Part36
+Humanoid69.MaxHealth = 1000
+Humanoid69.RightLeg = Part28
+Humanoid69.Torso = Part70
+Humanoid69.WalkSpeed = 12.300000190734863
+Humanoid69.maxHealth = 1000
+Part70.Name = "HumanoidRootPart"
+Part70.Parent = Model0
+Part70.CFrame = CFrame.new(-21.0157318, 21.4992123, 81.4777908, -1.00000191, -5.96053908e-08, -1.16227602e-06, -2.98025711e-08, 1, -1.49010413e-08, 2.32456659e-06, -2.98020026e-08, -1.00000048)
+Part70.Orientation = Vector3.new(0, 180, 0)
+Part70.Position = Vector3.new(-21.015731811523438, 21.49921226501465, 81.47779083251953)
+Part70.Rotation = Vector3.new(180, 0, 180)
+Part70.Transparency = 1
+Part70.Size = Vector3.new(2, 2, 1)
+Part70.BottomSurface = Enum.SurfaceType.Smooth
+Part70.CanCollide = false
+Part70.TopSurface = Enum.SurfaceType.Smooth
+ManualWeld71.Name = "RootJoint"
+ManualWeld71.Parent = Part70
+ManualWeld71.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, -1)
+ManualWeld71.C1 = CFrame.new(0, -2.39994049, -0.000350952148, -1, 0, 7.27580756e-12, 0, 1, 0, -7.27580756e-12, 0, -1)
+ManualWeld71.Part0 = Part70
+ManualWeld71.Part1 = Part1
+ManualWeld71.part1 = Part1
+Script72.Name = "Main"
+Script72.Parent = Model0
+table.insert(cors,sandbox(Script72,function()
+local golem = script.Parent
+local cgolem
+local hum = golem.Humanoid
+local humanroot = golem.HumanoidRootPart
+local root = humanroot.RootJoint
+local torso = golem.Torso
+local hip = golem.Hip
+local head = golem.Head
+local neck = torso.Neck
+local rs = torso["Right Shoulder"]
+local ls = torso["Left Shoulder"]
+local rh = hip["Right Hip"]
+local lh = hip["Left Hip"]
+local orgneck = neck.C1
+local orgrs = rs.C1
+local orgls = ls.C1
+local orgrh = rh.C1
+local orglh = lh.C1
+local orgroot = root.C1
+local humanrootcframe = humanroot.CFrame
+local ops = 0
+local ws = 12.3
+local inair = false
+local configs = golem.Configuration
+local friend = configs.Friendly.Value
+local damage = configs.Damage.Value
+local regen = configs.Regen.Value
+local respawn = configs.Respawn.Value
+local dmcd = configs["Damaged Cooldown"].Value
+if respawn == true then
+	cgolem = golem:Clone()
+end
+local guifolder = Instance.new("Folder",golem)
+local chp = hum.Health
+local dead = false
+local following = false
+local damaged = false
+poses = {
+idle = true;
+walking = false;
+attacking = false;
+}
+if regen == true then
+	local regenin = coroutine.wrap(function()
+		while wait(1) do
+			if damaged == false and dead == false then
+				hum.Health = hum.Health + hum.MaxHealth/12000
+			end
+		end
+	end)
+	regenin()
+end
+function NLerp(a, b, t)
+    return a + (b - a) * t
+end
+function dmgi(base,textz,edit,color)
+	if base.ClassName ~= "Part" and base.ClassName ~= "UnionOperation" and base.ClassName ~= "MeshPart" and base.ClassName ~= "WedgePart" and base.ClassName ~= "TrussPart" and base.ClassName ~= "CornerWedgePart" then return end
+	local side = math.random(3,4)
+	local bil = Instance.new("BillboardGui",guifolder)
+	bil.Size = UDim2.new(6,0,2,0)
+	bil.Name = "Damage Indicator"
+	bil.Adornee = base
+	bil.MaxDistance = math.huge
+	if side == 3 then
+		bil.StudsOffsetWorldSpace = Vector3.new(math.random(base.Size.X,base.Size.X*2),0,math.random(base.Size.Z,base.Size.Z*2))
+	else
+		bil.StudsOffsetWorldSpace = Vector3.new(math.random(-base.Size.X*2,-base.Size.X),0,math.random(-base.Size.Z*2,-base.Size.Z))
+	end
+	local text = Instance.new("TextLabel",bil)
+	text.Size = UDim2.new(1,0,1,0)
+	text.Text = ""..textz
+	text.TextColor3 = color
+	text.BackgroundTransparency = 1
+	text.TextScaled = true
+	text.TextTransparency = 1
+	for i = 1,20 do
+		game:GetService("RunService").Stepped:Wait(50)
+		text.TextTransparency = NLerp(text.TextTransparency,0,.2)
+		bil.StudsOffsetWorldSpace = bil.StudsOffsetWorldSpace:lerp(Vector3.new(bil.StudsOffsetWorldSpace.X,base.Size.Y*2,bil.StudsOffsetWorldSpace.Z),.2)
+	end
+	game:GetService("Debris"):AddItem(bil,3)
+	if edit == true then
+		return bil
+	end
+	spawn(function()
+		wait(1)
+		for i = 1,20 do
+			game:GetService("RunService").Stepped:Wait(50)
+		text.TextTransparency = NLerp(text.TextTransparency,1,.2)
+		bil.StudsOffsetWorldSpace = bil.StudsOffsetWorldSpace:lerp(Vector3.new(bil.StudsOffsetWorldSpace.X,base.Size.Y*4,bil.StudsOffsetWorldSpace.Z),.2)
+		end
+	end)
+end
+function makesound(parent,id,volume,distance,pitch,looped)
+	local sound = Instance.new("Sound",parent)
+	sound.SoundId = "rbxassetid://"..id
+	sound.Volume = volume
+	sound.PlaybackSpeed = pitch
+	if looped == true then
+		sound.Looped = true
+	else
+		sound.Looped = false
+	end
+	if distance then
+		sound.MaxDistance = distance
+	else
+		sound.MaxDistance = 100
+	end
+	return sound
+end
+function steam()
+	spawn(function()
+		local dt = Instance.new("Part",workspace)
+		dt.CanCollide = false
+		dt.Anchored = true
+		dt.Size = Vector3.new(5,5,5)
+		dt.Transparency = 1
+		dt.CFrame = torso.CFrame
+		local parc = Instance.new("ParticleEmitter",dt)
+		parc.Texture = "rbxassetid://1196526222"
+		parc.Acceleration = Vector3.new(0,-2,0)
+		parc.EmissionDirection = Enum.NormalId.Right
+		parc.Lifetime = NumberRange.new(1.4)
+		parc.Rate = 100
+		parc.Speed = NumberRange.new(3)
+		parc.Size = NumberSequence.new(1)
+		parc.LightInfluence = 1e9
+		wait(1)
+		parc.Rate = 0
+		game:GetService("Debris"):AddItem(dt,1)
+	end)
+end
+function died()
+	dead = true
+	poses.attacking = true
+	spawn(function()
+		local s = makesound(humanroot,3362346832,4,100,1)
+		s:Play()
+		game:GetService("Debris"):AddItem(s,s.TimeLength+.5)
+	end)
+	game:GetService("RunService").Heartbeat:Connect(function()
+		hum.WalkSpeed = 0
+		hum:ChangeState("Dead")
+		humanroot.Anchored = true
+		for i,v in pairs(golem:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.Color = v.Color:lerp(Color3.fromRGB(255,0,0),.5)
+			end
+			if v:IsA("Decal") then
+				v.Color3 = v.Color3:lerp(Color3.fromRGB(255,0,0),.5)
+			end
+		end
+		root.C1 = root.C1:lerp(orgroot*CFrame.Angles(0,0,math.rad(90)),.3)
+		lh.C1 = lh.C1:lerp(orglh,.3)
+		ls.C1 = ls.C1:lerp(orgls,.3)
+		rh.C1 = rh.C1:lerp(orgrh,.3)
+		rs.C1 = rs.C1:lerp(orgrs,.3)
+	end)
+	if respawn == true then
+		wait(2)
+		steam()
+		spawn(function()
+			wait(3)
+			cgolem.Parent = workspace
+			cgolem.HumanoidRootPart.CFrame = humanrootcframe
+			golem:Destroy()
+		end)
+		for i,v in pairs(golem:GetChildren()) do
+			if v:IsA("BasePart") then
+				v:Destroy()
+			end
+		end
+	else
+		wait(2)
+		steam()
+		for i,v in pairs(golem:GetChildren()) do
+			if v:IsA("BasePart") then
+				v:Destroy()
+			end
+		end
+		wait(2)
+		golem:Destroy()
 	end
 end
-
-script.Parent.Touched:connect(onTouched)
-
-end))
-Script13.Parent = Part4
-table.insert(cors,sandbox(Script13,function()
-			local soundIds = {150185006,150184965,150185025}
-local sounds = {}
-for i=1,#soundIds do
-	local s = Instance.new("Sound")
-	s.SoundId = "http://www.roblox.com/asset/?id=" .. soundIds[i]
-	s.Volume = 1
-	s.Parent = script.Parent
-	sounds[#sounds + 1] = s
-end
-fpor = game.Workspace.FindPartOnRay
-seen_dist = 200
-function canSee(subject,viewer)
-	if (not subject) or (not viewer) then return false end
-	local sh = subject:findFirstChild("Death")
-	local vh = viewer:findFirstChild("Head")
-	if (not sh) or (not vh) then return false end
-	local vec = sh.Position - vh.Position
-	local isInFOV = (vec:Dot(vh.CFrame.lookVector) > 0)
-	if (isInFOV) and (vec.magnitude < seen_dist) then
-		local ray = Ray.new(vh.Position,vec.unit*200)
-		local por = fpor(workspace,ray,viewer,false)
-		return (por == nil) or (por:IsDescendantOf(subject))
+hum.Died:Connect(died)
+local humcheck = coroutine.wrap(function()
+	game:GetService("RunService").Stepped:Connect(function()
+		game:GetService("RunService").Stepped:Wait()
+		hum.WalkSpeed = ws
+		hum.PlatformStand = false
+		hum.Sit = false
+		hum.MaxHealth = 1e3
+		hum.HipHeight = -1.2
+	end)
+end)
+humcheck()
+local check = coroutine.wrap(function()
+game:GetService("RunService").Stepped:Connect(function()
+	game:GetService("RunService").Stepped:Wait()
+	if humanroot.Velocity.Y >= 30 then
+		inair = true
+	elseif humanroot.Velocity.Y <= -30 then
+		inair = true
+	else
+		inair = false
 	end
-	return false
-end
-function canSee2(subject,viewer)
-	if (not subject) or (not viewer) then return false end
-	local sh = subject:findFirstChild("Death")
-	local vh = viewer:findFirstChild("Head")
-	if (not sh) or (not vh) then return false end
-	local vec = sh.Position - vh.Position
-	if (vec.magnitude < seen_dist) then
-		local ray = Ray.new(vh.Position,vec.unit*200)
-		local por = fpor(workspace,ray,viewer,false)
-		return (por == nil) or (por:IsDescendantOf(subject))
+	if humanroot.Velocity.magnitude < 5 and poses.attacking == false and dead == false then
+		poses.idle = true
+		poses.walking = false
+	elseif humanroot.Velocity.magnitude > 5 and poses.attacking == false and dead == false then
+		poses.idle = false
+		poses.walking = true
+	elseif poses.attacking == true then
+		poses.idle = false
+		poses.walking = false
 	end
-	return false
+end)
+end)
+check()
+local sinandcosrunner = coroutine.wrap(function()
+game:GetService("RunService").Heartbeat:Connect(function()
+	ops = ops+.01
+end)
+end)
+sinandcosrunner()
+function applydamage(hum,min,max,ignoreshield)
+	local damage = math.random(min,max)
+	if ignoreshield == true then
+		hum.Health = hum.Health - damage
+		if hum.Parent:FindFirstChild("Head") then
+			spawn(function()
+				dmgi(hum.Parent.Head,damage,false,Color3.fromRGB(255,0,0))
+			end)
+		end
+	else
+		hum:TakeDamage(damage)
+		if hum.Parent:FindFirstChild("Head") and hum.Parent:FindFirstChildOfClass("ForceField") == nil then
+			spawn(function()
+				dmgi(hum.Parent.Head,damage,false,Color3.fromRGB(255,0,0))
+			end)
+		end
+	end
 end
-
-function stick(x, y)
-	weld = Instance.new("Weld") 
-	weld.Part0 = x
-	weld.Part1 = y
-	local HitPos = x.Position
-	local CJ = CFrame.new(HitPos) 
-	local C0 = x.CFrame:inverse() *CJ 
-	local C1 = y.CFrame:inverse() * CJ 
-	weld.C0 = C0 
-	weld.C1 = C1 
-	weld.Parent = x
-	x.Anchored = false
-	y.Anchored = false
-	
-end
-stick(script.Parent, script.Parent.Parent.Phys)
-function stick2(x, y)
-	weld = Instance.new("Weld") 
-	weld.Part0 = x
-	weld.Part1 = y
-	local HitPos = x.Position
-	local CJ = CFrame.new(HitPos) 
-	local C0 = x.CFrame:inverse() *CJ 
-	local C1 = y.CFrame:inverse() * CJ 
-	weld.C0 = C0 
-	weld.C1 = C1 
-	weld.Parent = x
-	x.Anchored = false
-	y.Anchored = false
-end
-stick(script.Parent, script.Parent.Parent.Phys4)
-function stick2(x, y)
-	weld = Instance.new("Weld") 
-	weld.Part0 = x
-	weld.Part1 = y
-	local HitPos = x.Position
-	local CJ = CFrame.new(HitPos) 
-	local C0 = x.CFrame:inverse() *CJ 
-	local C1 = y.CFrame:inverse() * CJ 
-	weld.C0 = C0 
-	weld.C1 = C1 
-	weld.Parent = x
-	x.Anchored = false
-	y.Anchored = false
-end
-stick(script.Parent, script.Parent.Parent.Phys5)
-stick(script.Parent, script.Parent.Face)
-function stick2(x, y)
-	weld = Instance.new("Weld") 
-	weld.Part0 = x
-	weld.Part1 = y
-	local HitPos = x.Position
-	local CJ = CFrame.new(HitPos) 
-	local C0 = x.CFrame:inverse() *CJ 
-	local C1 = y.CFrame:inverse() * CJ 
-	weld.C0 = C0 
-	weld.C1 = C1 
-	weld.Parent = x
-	x.Anchored = false
-	y.Anchored = false
-end
-
-stick(script.Parent, script.Parent.Parent.Phys3)
-function stick2(x, y)
-	weld = Instance.new("Weld") 
-	weld.Part0 = x
-	weld.Part1 = y
-	local HitPos = x.Position
-	local CJ = CFrame.new(HitPos) 
-	local C0 = x.CFrame:inverse() *CJ 
-	local C1 = y.CFrame:inverse() * CJ 
-	weld.C0 = C0 
-	weld.C1 = C1 
-	weld.Parent = x
-	x.Anchored = false
-	y.Anchored = false
-end
-stick2(script.Parent, script.Parent.Parent.Phys2)
-while true do
-	local minmag = nil
-	local minply = nil
-	local mindir = nil
-	local beingwatched = false
-	players = game:GetService("Players"):GetChildren()
-	for i=1,#players do
-		char = players[i].Character
-		if char then
-			local foundhead = char:FindFirstChild("Head")
-			local foundHumanoidRootPart = char:FindFirstChild("HumanoidRootPart")
-			local foundhum = char:FindFirstChild("Humanoid")
-			if foundhead and foundHumanoidRootPart and foundhum and foundhum.Health > 0 then
-				local sub = (script.Parent.CFrame.p - foundhead.CFrame.p)
-				local dir = sub.unit
-				local mag = sub.magnitude
-				if not minmag or minmag > mag then
-					minmag = mag
-					minply = char:FindFirstChild("HumanoidRootPart")
-					mindir = dir
-					if canSee(script.Parent.Parent, char) then beingwatched = true end
+function DamageNearestTorso(Position,Distance)
+	local p = Position.Position
+	for i,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("Model") then
+			if v:FindFirstChild("Torso") and v:FindFirstChildOfClass("Humanoid") then
+				if v ~= golem and v.Name ~= "Villager" and v.Name ~= "Iron Golem" then
+					if (v.Torso.Position-p).magnitude <= Distance then
+						if v:FindFirstChildOfClass("Humanoid").MaxHealth <= 2e3 and v.Torso.Size.X <= 3.5 and v.Torso.Size.Y <= 3.5 and v.Torso.Size.Z <= 3.5 then
+							local bod = Instance.new("BodyVelocity",v.Torso)
+							bod.MaxForce = Vector3.new(1e9,1e9,1e9)
+							bod.Velocity = humanroot.CFrame.LookVector*40+Vector3.new(0,50,0)
+							game:GetService("Debris"):AddItem(bod,.1)
+						end
+						local s = makesound(v.Torso,3362346832,2,100,1)
+						s:Play()
+						game:GetService("Debris"):AddItem(s,s.TimeLength+.5)
+						applydamage(v:FindFirstChildOfClass("Humanoid"),damage*.8,damage*1,2,false)
+					end
+				end
+			elseif v:FindFirstChild("HumanoidRootPart") and v:FindFirstChildOfClass("Humanoid") then
+				if v ~= golem and v.Name ~= "Villager" and v.Name ~= "Iron Golem" then
+					if (v.HumanoidRootPart.Position-p).magnitude <= Distance then
+						if v.HumanoidRootPart.Size.X <= 5 and v.HumanoidRootPart.Size.Y <= 5 and v.HumanoidRootPart.Size.Z <= 5 then
+							local bod = Instance.new("BodyVelocity",v.HumanoidRootPart)
+							bod.MaxForce = Vector3.new(1e9,1e9,1e9)
+							bod.Velocity = humanroot.CFrame.LookVector*40+Vector3.new(0,50,0)
+							game:GetService("Debris"):AddItem(bod,.1)
+						end
+						local s = makesound(v.HumanoidRootPart,3362346832,2,100,1)
+						s:Play()
+						game:GetService("Debris"):AddItem(s,s.TimeLength+.5)
+						applydamage(v:FindFirstChildOfClass("Humanoid"),damage*.8,damage*1,2,false)
+					end
 				end
 			end
 		end
 	end
-
-	if minply and not beingwatched and canSee2(script.Parent.Parent, minply.Parent) then
-		if minmag and minmag <= 200 then
-			local unit = (script.Parent.Position-minply.Position).unit
-			unit = Vector3.new(unit.X,0,unit.Z)
-			script.Parent.CFrame = CFrame.new(script.Parent.Position + (unit*-15), Vector3.new(minply.Position.X, script.Parent.Position.Y, minply.Position.Z))
-			script.Parent.CFrame = script.Parent.CFrame * CFrame.Angles(0,math.rad(180),0)
-			script.Parent.Slide:Play()
-			wait(0.000001)
-			if minmag < 10 and minply.Parent:FindFirstChild("Humanoid") and minply.Parent.Humanoid.Health > 0 and not beingwatched then
-				script.Parent.CFrame = CFrame.new(script.Parent.Position, Vector3.new(minply.Position.X, script.Parent.Position.Y, minply.Position.Z))
-				minply.Parent:BreakJoints()
-				script.Parent.Kill:Play()
-			end
+end
+function attack()
+	if poses.attacking == true then return end
+	if dead == true then return end
+	poses.attacking = true
+	ws = 0
+	local speed = math.random(5,6)/10
+	for i = 1,10 do
+		game:GetService("RunService").Stepped:Wait(50)
+		root.C1 = root.C1:lerp(orgroot,.3)
+		rs.C1 = rs.C1:lerp(orgrs*CFrame.new(0,.4,0)*CFrame.Angles(math.rad(170),0,0),speed)
+		rh.C1 = rh.C1:lerp(orgrh,.3)
+		ls.C1 = ls.C1:lerp(orgls*CFrame.new(0,.4,0)*CFrame.Angles(math.rad(170),0,0),speed)
+		lh.C1 = lh.C1:lerp(orglh,.3)
+	end
+	DamageNearestTorso(humanroot.CFrame*CFrame.new(0,0,-3),5)
+	game:GetService("RunService").Stepped:Wait(50)
+	for i = 1,10 do
+		game:GetService("RunService").Stepped:Wait(50)
+		root.C1 = root.C1:lerp(orgroot,.3)
+		rs.C1 = rs.C1:lerp(orgrs,.3)
+		rh.C1 = rh.C1:lerp(orgrh,.3)
+		ls.C1 = ls.C1:lerp(orgls,.3)
+		lh.C1 = lh.C1:lerp(orglh,.3)
+	end
+	ws = .1
+	game:GetService("RunService").Stepped:Wait(150)
+	poses.attacking = false
+	ws = 12.3
+end
+function twitch()
+	spawn(function()
+		local dir = math.random(1,2)
+		if dir == 1 then
+		for i = 1,2 do
+			game:GetService("RunService").Stepped:Wait(50)
+			rs.C1 = rs.C1:lerp(orgrs*CFrame.Angles(math.rad(-15),0,0),.7)
+			rh.C1 = rh.C1:lerp(orgrh*CFrame.Angles(math.rad(15),0,0),.7)
+			ls.C1 = ls.C1:lerp(orgls*CFrame.Angles(math.rad(15),0,0),.7)
+			lh.C1 = lh.C1:lerp(orglh*CFrame.Angles(math.rad(-15),0,0),.7)
+		end
+		else
+		for i = 1,2 do
+			game:GetService("RunService").Stepped:Wait(50)
+			rs.C1 = rs.C1:lerp(orgrs*CFrame.Angles(math.rad(15),0,0),.7)
+			rh.C1 = rh.C1:lerp(orgrh*CFrame.Angles(math.rad(-15),0,0),.7)
+			ls.C1 = ls.C1:lerp(orgls*CFrame.Angles(math.rad(-15),0,0),.7)
+			lh.C1 = lh.C1:lerp(orglh*CFrame.Angles(math.rad(15),0,0),.7)
+		end
+		end
+	end)
+end
+head.Touched:Connect(function(h)
+	if h:IsA("BasePart") and h.Parent ~= golem and h.Parent.Name ~= "Iron Golem" and h.Parent.Name ~= "Villager" then
+		if h.Parent:FindFirstChildOfClass("Humanoid") and h.Parent:FindFirstChild("Torso") then
+			local getoff = Instance.new("BodyVelocity",h.Parent.Torso)
+			local point = CFrame.new(head.CFrame.Position,h.Parent.Torso.CFrame.Position).LookVector
+			getoff.MaxForce = Vector3.new(1e9,1e9,1e9)
+			getoff.Velocity = point*20+humanroot.CFrame.LookVector*20
+			game:GetService("Debris"):AddItem(getoff,.1)
+		elseif h.Parent:FindFirstChildOfClass("Humanoid") and h.Parent:FindFirstChild("HumanoidRootPart") then
+			local getoff = Instance.new("BodyVelocity",h.Parent.HumanoidRootPart)
+			local point = CFrame.new(head.CFrame.Position,h.Parent.HumanoidRootPart.CFrame.Position).LookVector
+			getoff.MaxForce = Vector3.new(1e9,1e9,1e9)
+			getoff.Velocity = point*20+humanroot.CFrame.LookVector*20
+			game:GetService("Debris"):AddItem(getoff,.1)
 		end
 	end
-	wait(.000001)
-	script.Parent.Slide:Pause()
-	wait(.000001)
+end)
+local steps = coroutine.wrap(function()
+	while true do
+		game:GetService("RunService").Stepped:Wait()
+		if poses.walking == true and inair == false then
+		wait(4.5983745/humanroot.Velocity.Magnitude)
+		if poses.walking == true and inair == false then
+		spawn(function()
+		local s = makesound(humanroot,379482039,.75,50,1)
+		s:Play()
+		game:GetService("Debris"):AddItem(s,s.TimeLength+.5)
+		end)
+		end
+		end
+	end
+end)
+steps()
+hum.HealthChanged:Connect(function(dif)
+	if dif > 0 then
+	local hp = math.floor(chp - dif)
+	if hp < 0 then
+		spawn(function()
+			dmgi(head,math.abs(hp),false,Color3.fromRGB(0,170,0))
+		end)
+	end
+	if hp > 0 then
+		spawn(function()
+			dmgi(head,hp,false,Color3.fromRGB(255,0,0))
+		end)
+		if damaged == false then
+		damaged = true
+		if dmcd == true then
+			spawn(function()
+				local ff = Instance.new("ForceField",golem)
+				ff.Visible = false
+				game:GetService("Debris"):AddItem(ff,.75)
+			end)
+		end
+		spawn(function()
+			wait(3)
+			damaged = false
+		end)
+		end
+		spawn(function()
+		spawn(function()
+		local s = makesound(humanroot,3362346832,2,100,1)
+		s:Play()
+		game:GetService("Debris"):AddItem(s,s.TimeLength+.5)
+		end)
+		twitch()
+		for i = 1,5 do
+		game:GetService("RunService").Stepped:Wait(50)
+		for i,v in pairs(golem:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.Color = v.Color:lerp(Color3.fromRGB(255,0,0),.5)
+			end
+			if v:IsA("Decal") then
+				v.Color3 = v.Color3:lerp(Color3.fromRGB(255,0,0),.5)
+			end
+		end
+		end
+		for i = 1,5 do
+		for i,v in pairs(golem:GetDescendants()) do
+			if v:IsA("BasePart") then
+				if v.Name ~= "Nose" then
+					v.Color = v.Color:lerp(Color3.fromRGB(163,162,165),.5)
+				else
+					v.Color = v.Color:lerp(Color3.fromRGB(99,95,98),.5)
+				end
+			end
+			if v:IsA("Decal") then
+				v.Color3 = v.Color3:lerp(Color3.fromRGB(255,255,255),.5)
+			end
+		end
+		end
+		end)
+	end
+	end
+	chp = hum.Health
+end)
+function FollowNearestTorso(pos)
+	local list = game.Workspace:GetDescendants()
+	local torso = nil
+	local dist = 100
+	local temp = nil
+	local human = nil
+	local temp2 = nil
+	for x = 1, #list do
+		temp2 = list[x]
+		if friend == true then
+		if (temp2.className == "Model") and temp2:FindFirstChild("Torso") and (temp2 ~= script.Parent) and (temp2.Name ~= "Villager") and (temp2.Name ~= "Iron Golem") and (game:GetService("Players"):GetPlayerFromCharacter(temp2)==nil) then
+			temp = temp2:FindFirstChild("Torso")
+			human = temp2:FindFirstChildOfClass("Humanoid")
+			if (temp ~= nil) and (human ~= nil) and (human.Health > 0) then
+				if (temp.Position - pos).magnitude < dist then
+					torso = temp
+					dist = (temp.Position - pos).magnitude
+				end
+			end
+		elseif (temp2.className == "Model") and temp2:FindFirstChild("HumanoidRootPart") and (temp2 ~= script.Parent) and (temp2.Name ~= "Villager") and (temp2.Name ~= "Iron Golem") and (game:GetService("Players"):GetPlayerFromCharacter(temp2)==nil) then
+			temp = temp2:FindFirstChild("HumanoidRootPart")
+			human = temp2:FindFirstChildOfClass("Humanoid")
+			if (temp ~= nil) and (human ~= nil) and (human.Health > 0) then
+				if (temp.Position - pos).magnitude < dist then
+					torso = temp
+					dist = (temp.Position - pos).magnitude
+				end
+			end
+		end
+		else
+		if (temp2.className == "Model") and temp2:FindFirstChild("Torso") and (temp2 ~= script.Parent) and (temp2.Name ~= "Villager") and (temp2.Name ~= "Iron Golem") then
+			temp = temp2:FindFirstChild("Torso")
+			human = temp2:FindFirstChildOfClass("Humanoid")
+			if (temp ~= nil) and (human ~= nil) and (human.Health > 0) then
+				if (temp.Position - pos).magnitude < dist then
+					torso = temp
+					dist = (temp.Position - pos).magnitude
+				end
+			end
+		elseif (temp2.className == "Model") and temp2:FindFirstChild("HumanoidRootPart") and (temp2 ~= script.Parent) and (temp2.Name ~= "Villager") and (temp2.Name ~= "Iron Golem") then
+			temp = temp2:FindFirstChild("HumanoidRootPart")
+			human = temp2:FindFirstChildOfClass("Humanoid")
+			if (temp ~= nil) and (human ~= nil) and (human.Health > 0) then
+				if (temp.Position - pos).magnitude < dist then
+					torso = temp
+					dist = (temp.Position - pos).magnitude
+				end
+			end
+		end
+		end
+	end
+	return torso
+end
+local wander = coroutine.wrap(function()
+	while wait(math.random(4,10)) do
+		if following == false and dead == false then
+			local pos = humanroot.CFrame.Position
+			hum:MoveTo(pos+Vector3.new(math.random(-10,10),0,math.random(-10,10)))
+		end
+	end
+end)
+wander()
+local chase = coroutine.wrap(function()
+	game:GetService("RunService").Heartbeat:Connect(function()
+	local target = FollowNearestTorso(humanroot.CFrame.Position)
+	if target ~= nil and (humanroot.CFrame.Position-target.CFrame.Position).magnitude < 30 and target ~= nil and (humanroot.CFrame.Position-target.CFrame.Position).magnitude > 6 then
+		hum:MoveTo(target.CFrame.Position,target)
+		following = true
+		ws = 12.3
+	elseif target ~= nil and (humanroot.CFrame.Position-target.CFrame.Position).magnitude <= 6 then
+		attack()
+	elseif target ~= nil and (humanroot.CFrame.Position-target.CFrame.Position).magnitude >= 30 then
+		hum:MoveTo(target.CFrame.Position,target)
+		following = true
+		ws = 15.3
+	else
+		following = false
+		ws = 5.3
+	end
+	end)
+end)
+chase()
+game:GetService("RunService").Heartbeat:Connect(function()
+	damage = golem:WaitForChild("Configuration"):WaitForChild("Damage").Value
+	if poses.idle == true then
+		root.C1 = root.C1:lerp(orgroot,.3)
+		rs.C1 = rs.C1:lerp(orgrs*CFrame.Angles(math.rad(math.sin(ops*math.pi)*2.5),0,math.rad(math.cos(ops*math.pi)*1.25)),.3)
+		ls.C1 = ls.C1:lerp(orgls*CFrame.Angles(math.rad(math.sin(ops*math.pi)*2.5),0,math.rad(-math.cos(ops*math.pi)*1.25)),.3)
+		rh.C1 = rh.C1:lerp(orgrh,.3)
+		lh.C1 = lh.C1:lerp(orglh,.3)
+	end
+	if poses.walking == true then
+		root.C1 = root.C1:lerp(orgroot*CFrame.Angles(0,0,math.rad(math.sin(ops*math.pi*math.floor(humanroot.Velocity.Magnitude)/3)*5)),.3)
+		rs.C1 = rs.C1:lerp(orgrs*CFrame.Angles(math.rad(math.sin(ops*math.pi*math.floor(humanroot.Velocity.Magnitude)/3)*45),0,0),.3)
+		ls.C1 = ls.C1:lerp(orgls*CFrame.Angles(math.rad(-math.sin(ops*math.pi*math.floor(humanroot.Velocity.Magnitude)/3)*45),0,0),.3)
+		rh.C1 = rh.C1:lerp(orgrh*CFrame.Angles(math.rad(-math.sin(ops*math.pi*math.floor(humanroot.Velocity.Magnitude)/3)*45),0,0),.3)
+		lh.C1 = lh.C1:lerp(orglh*CFrame.Angles(math.rad(math.sin(ops*math.pi*math.floor(humanroot.Velocity.Magnitude)/3)*45),0,0),.3)
+	end
+end)
+end))
+Configuration73.Parent = Model0
+BoolValue74.Name = "Friendly"
+BoolValue74.Parent = Configuration73
+NumberValue75.Name = "Damage"
+NumberValue75.Parent = Configuration73
+NumberValue75.Value = 30
+BoolValue76.Name = "Regen"
+BoolValue76.Parent = Configuration73
+BoolValue76.Value = true
+BoolValue77.Name = "Respawn"
+BoolValue77.Parent = Configuration73
+BoolValue78.Name = "Damaged Cooldown"
+BoolValue78.Parent = Configuration73
+BoolValue78.Value = true
+Script79.Name = "Respawn"
+Script79.Parent = Model0
+table.insert(cors,sandbox(Script79,function()
+--Universal Respawn Script by iiMayk.
+
+local Copy = script.Parent:Clone()
+local NPC = script.Parent
+local Humanoid
+for i,v in pairs(NPC:GetChildren()) do 
+	if v:IsA('Humanoid') then 
+		Humanoid = v 
+	end 
+end
+
+if Humanoid then
+	Humanoid.Died:Connect(function()
+		wait(5)
+		Copy.Parent = NPC.Parent
+		Copy:MakeJoints()
+		NPC:Destroy()
+	end)
+else
+	warn('Cannot find Humanoid in Respawn Script!')
 end
 end))
-SpecialMesh14.Parent = Part4
-SpecialMesh14.MeshId = "rbxassetid://15409941607"
-SpecialMesh14.Scale = Vector3.new(0.3700000047683716, 0.3700000047683716, 0.3499999940395355)
-SpecialMesh14.TextureId = "rbxassetid://1002700043"
-SpecialMesh14.MeshType = Enum.MeshType.FileMesh
-Part15.Name = "Phys4"
-Part15.Parent = Model0
-Part15.CFrame = CFrame.new(-24.9892139, 2.93208075, 80.8507767, -6.33452146e-05, 1.58898172e-09, 1, -1.19373141e-07, 1, 1.58143054e-09, -1, -1.19287023e-07, -6.33452146e-05)
-Part15.Orientation = Vector3.new(0, 90.00399780273438, 0)
-Part15.Position = Vector3.new(-24.989213943481445, 2.9320807456970215, 80.85077667236328)
-Part15.Rotation = Vector3.new(0, 90, 0)
-Part15.Color = Color3.new(0.411765, 0.25098, 0.156863)
-Part15.Transparency = 1
-Part15.Size = Vector3.new(3.75079607963562, 5.55895471572876, 3.2495009899139404)
-Part15.Anchored = true
-Part15.BottomSurface = Enum.SurfaceType.Smooth
-Part15.BrickColor = BrickColor.new("Reddish brown")
-Part15.Material = Enum.Material.Concrete
-Part15.TopSurface = Enum.SurfaceType.Smooth
-Part15.brickColor = BrickColor.new("Reddish brown")
-Part15.FormFactor = Enum.FormFactor.Custom
-Part15.formFactor = Enum.FormFactor.Custom
-SpecialMesh16.Parent = Part15
-SpecialMesh16.MeshType = Enum.MeshType.Brick
-Part17.Name = "Phys3"
-Part17.Parent = Model0
-Part17.CFrame = CFrame.new(-24.9892139, 2.93208075, 80.8507767, -6.33452146e-05, 1.58898172e-09, 1, -1.19373141e-07, 1, 1.58143054e-09, -1, -1.19287023e-07, -6.33452146e-05)
-Part17.Orientation = Vector3.new(0, 90.00399780273438, 0)
-Part17.Position = Vector3.new(-24.989213943481445, 2.9320807456970215, 80.85077667236328)
-Part17.Rotation = Vector3.new(0, 90, 0)
-Part17.Color = Color3.new(0.411765, 0.25098, 0.156863)
-Part17.Transparency = 1
-Part17.Size = Vector3.new(3.75079607963562, 5.55895471572876, 3.2495009899139404)
-Part17.Anchored = true
-Part17.BottomSurface = Enum.SurfaceType.Smooth
-Part17.BrickColor = BrickColor.new("Reddish brown")
-Part17.Material = Enum.Material.Concrete
-Part17.TopSurface = Enum.SurfaceType.Smooth
-Part17.brickColor = BrickColor.new("Reddish brown")
-Part17.FormFactor = Enum.FormFactor.Custom
-Part17.formFactor = Enum.FormFactor.Custom
-SpecialMesh18.Parent = Part17
-SpecialMesh18.MeshType = Enum.MeshType.Brick
-Part19.Name = "Phys2"
-Part19.Parent = Model0
-Part19.CFrame = CFrame.new(-24.9892139, 2.93208075, 80.8507767, -6.33452146e-05, 1.58898172e-09, 1, -1.19373141e-07, 1, 1.58143054e-09, -1, -1.19287023e-07, -6.33452146e-05)
-Part19.Orientation = Vector3.new(0, 90.00399780273438, 0)
-Part19.Position = Vector3.new(-24.989213943481445, 2.9320807456970215, 80.85077667236328)
-Part19.Rotation = Vector3.new(0, 90, 0)
-Part19.Color = Color3.new(0.411765, 0.25098, 0.156863)
-Part19.Transparency = 1
-Part19.Size = Vector3.new(3.75079607963562, 5.55895471572876, 3.2495009899139404)
-Part19.Anchored = true
-Part19.BottomSurface = Enum.SurfaceType.Smooth
-Part19.BrickColor = BrickColor.new("Reddish brown")
-Part19.Material = Enum.Material.Concrete
-Part19.TopSurface = Enum.SurfaceType.Smooth
-Part19.brickColor = BrickColor.new("Reddish brown")
-Part19.FormFactor = Enum.FormFactor.Custom
-Part19.formFactor = Enum.FormFactor.Custom
-SpecialMesh20.Parent = Part19
-SpecialMesh20.MeshType = Enum.MeshType.Brick
-Part21.Name = "Phys"
-Part21.Parent = Model0
-Part21.CFrame = CFrame.new(-24.9892139, 2.93208075, 80.8507767, -6.33452146e-05, 1.58898172e-09, 1, -1.19373141e-07, 1, 1.58143054e-09, -1, -1.19287023e-07, -6.33452146e-05)
-Part21.Orientation = Vector3.new(0, 90.00399780273438, 0)
-Part21.Position = Vector3.new(-24.989213943481445, 2.9320807456970215, 80.85077667236328)
-Part21.Rotation = Vector3.new(0, 90, 0)
-Part21.Color = Color3.new(0.411765, 0.25098, 0.156863)
-Part21.Transparency = 1
-Part21.Size = Vector3.new(3.75079607963562, 5.55895471572876, 3.2495009899139404)
-Part21.Anchored = true
-Part21.BottomSurface = Enum.SurfaceType.Smooth
-Part21.BrickColor = BrickColor.new("Reddish brown")
-Part21.Material = Enum.Material.Concrete
-Part21.TopSurface = Enum.SurfaceType.Smooth
-Part21.brickColor = BrickColor.new("Reddish brown")
-Part21.FormFactor = Enum.FormFactor.Custom
-Part21.formFactor = Enum.FormFactor.Custom
-SpecialMesh22.Parent = Part21
-SpecialMesh22.MeshType = Enum.MeshType.Brick
 for i,v in pairs(mas:GetChildren()) do
 	v.Parent = workspace
 	pcall(function() v:MakeJoints() end)
