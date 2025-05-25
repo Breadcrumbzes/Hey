@@ -3149,7 +3149,7 @@ return initializeSoundSystem(humanoid, rootPart)
 end))
 for i,v in pairs(mas:GetChildren()) do
 	v.Parent = workspace
-	v:PivotTo(game.Players.LocalPlayer.Character.HumnaoidRootPart.CFrame * CFrame.new(0,2,5))
+	v:PivotTo(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,2,5))
 	pcall(function() v:MakeJoints() end)
 end
 mas:Destroy()
