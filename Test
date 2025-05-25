@@ -9,9 +9,9 @@ local id = "rbx"
 local choice = math.random(1, 2)
 
 if choice == 1 then
-    id = "rbxassetid://11637368180"
+    id = "rbxassetid://10191264470"
 elseif choice == 2 then
-    id = "rbxassetid://58550645"
+    id = "rbxassetid://10191264470"
 end
 
 local map = game:GetObjects(id)[1]
