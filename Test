@@ -1,14 +1,38 @@
+-- LocalScript (for example in StarterPlayerScripts or StarterCharacterScripts)
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Load the model from asset
 local model = game:GetObjects("rbxassetid://9874222345")[1]
+
+if not model then
+    warn("Failed to load the model.")
+    return
+end
+
+-- Parent the model to workspace and position it relative to the player's HumanoidRootPart
 model.Parent = workspace
-model:PivotTo(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,10,0))
+
+local function positionModelRelativeToPlayer()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = player.Character.HumanoidRootPart
+        model:PivotTo(hrp.CFrame * CFrame.new(0, 10, 0))
+    else
+        warn("Player's character or HumanoidRootPart not found.")
+    end
+end
+
+positionModelRelativeToPlayer()
+
+-- Perfection weld function (unchanged except with a few minor cleanups)
 local function perfection(part)
     coroutine.wrap(function()
-        -- This is the original qPerfectionWeld script logic
         local NEVER_BREAK_JOINTS = false
 
         local function CallOnChildren(Instance, FunctionToCall)
             FunctionToCall(Instance)
-            for _, Child in next, Instance:GetChildren() do
+            for _, Child in ipairs(Instance:GetChildren()) do
                 CallOnChildren(Child, FunctionToCall)
             end
         end
@@ -17,7 +41,7 @@ local function perfection(part)
             local Ancestor = Instance
             repeat
                 Ancestor = Ancestor.Parent
-                if Ancestor == nil then
+                if not Ancestor then
                     return nil
                 end
             until Ancestor:IsA(ClassName)
@@ -28,7 +52,7 @@ local function perfection(part)
             local List = {}
             CallOnChildren(StartInstance, function(Item)
                 if Item:IsA("BasePart") then
-                    List[#List + 1] = Item
+                    table.insert(List, Item)
                 end
             end)
             return List
@@ -36,7 +60,7 @@ local function perfection(part)
 
         local function Modify(Instance, Values)
             assert(type(Values) == "table", "Values is not a table")
-            for Index, Value in next, Values do
+            for Index, Value in pairs(Values) do
                 if type(Index) == "number" then
                     Value.Parent = Instance
                 else
@@ -85,7 +109,7 @@ local function perfection(part)
             return true
         end
 
-        local function WeldTogether(Part0, Part1, JointType, WeldParent)
+        local function WeldTogether(Part0, Part1, JointType)
             JointType = JointType or "Weld"
             local RelativeValue = Part1:FindFirstChild("qRelativeCFrameWeldValue")
             local NewWeld = Part1:FindFirstChild("qCFrameWeldThingy") or Instance.new(JointType)
@@ -98,7 +122,7 @@ local function perfection(part)
                 Parent = Part1
             })
             if not RelativeValue then
-                RelativeValue = Make("CFrameValue", {
+                Make("CFrameValue", {
                     Parent = Part1,
                     Name = "qRelativeCFrameWeldValue",
                     Archivable = true,
@@ -108,7 +132,7 @@ local function perfection(part)
             return NewWeld
         end
 
-        local function WeldParts(Parts, MainPart, JointType, DoNotUnanchor)
+        local function WeldParts(Parts, MainPart, JointType)
             for _, Part in pairs(Parts) do
                 if ShouldBreakJoints(Part) then
                     Part:BreakJoints()
@@ -116,24 +140,22 @@ local function perfection(part)
             end
             for _, Part in pairs(Parts) do
                 if Part ~= MainPart then
-                    WeldTogether(MainPart, Part, JointType, MainPart)
+                    WeldTogether(MainPart, Part, JointType)
                 end
             end
-            if not DoNotUnanchor then
-                for _, Part in pairs(Parts) do
-                    Part.Anchored = false
-                end
-                MainPart.Anchored = false
+            for _, Part in pairs(Parts) do
+                Part.Anchored = false
             end
+            MainPart.Anchored = false
         end
 
         local function PerfectionWeld()
             local Tool = GetNearestParent(script, "Tool")
             local Parts = GetBricks(script.Parent)
-            local PrimaryPart = Tool and Tool:FindFirstChild("Handle") and Tool.Handle:IsA("BasePart") and Tool.Handle or
-                script.Parent:IsA("Model") and script.Parent.PrimaryPart or Parts[1]
+            local PrimaryPart = (Tool and Tool:FindFirstChild("Handle") and Tool.Handle:IsA("BasePart")) and Tool.Handle
+                or (script.Parent:IsA("Model") and script.Parent.PrimaryPart) or Parts[1]
             if PrimaryPart then
-                WeldParts(Parts, PrimaryPart, "Weld", false)
+                WeldParts(Parts, PrimaryPart, "Weld")
             else
                 warn("qWeld - Unable to weld part")
             end
@@ -150,19 +172,18 @@ local function perfection(part)
     end)()
 end
 
--- Proper usage
-wait(1)
+-- Delay to ensure everything is loaded
+task.wait(0.1)
 
-
-if model then
-    for _, v in pairs(model:GetDescendants()) do
-        if v and v.Name == "qPerfectionWeld" then
-            if v.Parent then
-                perfection(v.Parent)
-            end
+-- Apply the perfection weld
+for _, v in pairs(model:GetDescendants()) do
+    if v.Name == "qPerfectionWeld" then
+        if v.Parent then
+            perfection(v.Parent)
         end
     end
 end
+
 
 --Fully made by Rufus14 (with a little help from Weld Plugin by popomcnuggets)
 --also script is commented so you can learn something
