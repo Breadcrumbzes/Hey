@@ -1,1 +1,553 @@
+local golem = game:GetObjects("rbxassetid://12969365705")[1]
+golem.Parent = workspace
+--Universal Respawn Script by iiMayk.
+coroutine.wrap(function()
+local cgolem
+local hum = golem.Humanoid
+local humanroot = golem.HumanoidRootPart
+local root = humanroot.RootJoint
+local torso = golem.Torso
+local hip = golem.Hip
+local head = golem.Head
+local neck = torso.Neck
+local rs = torso["Right Shoulder"]
+local ls = torso["Left Shoulder"]
+local rh = hip["Right Hip"]
+local lh = hip["Left Hip"]
+local orgneck = neck.C1
+local orgrs = rs.C1
+local orgls = ls.C1
+local orgrh = rh.C1
+local orglh = lh.C1
+local orgroot = root.C1
+local humanrootcframe = humanroot.CFrame
+local ops = 0
+local ws = 12.3
+local inair = false
+local configs = golem.Configuration
+local friend = configs.Friendly.Value
+local damage = configs.Damage.Value
+local regen = configs.Regen.Value
+local respawn = configs.Respawn.Value
+local dmcd = configs["Damaged Cooldown"].Value
+if respawn == true then
+	cgolem = golem:Clone()
+end
+local guifolder = Instance.new("Folder",golem)
+local chp = hum.Health
+local dead = false
+local following = false
+local damaged = false
+poses = {
+idle = true;
+walking = false;
+attacking = false;
+}
+if regen == true then
+	local regenin = coroutine.wrap(function()
+		while wait(1) do
+			if damaged == false and dead == false then
+				hum.Health = hum.Health + hum.MaxHealth/12000
+			end
+		end
+	end)
+	regenin()
+end
+function NLerp(a, b, t)
+    return a + (b - a) * t
+end
+function dmgi(base,textz,edit,color)
+	if base.ClassName ~= "Part" and base.ClassName ~= "UnionOperation" and base.ClassName ~= "MeshPart" and base.ClassName ~= "WedgePart" and base.ClassName ~= "TrussPart" and base.ClassName ~= "CornerWedgePart" then return end
+	local side = math.random(3,4)
+	local bil = Instance.new("BillboardGui",guifolder)
+	bil.Size = UDim2.new(6,0,2,0)
+	bil.Name = "Damage Indicator"
+	bil.Adornee = base
+	bil.MaxDistance = math.huge
+	if side == 3 then
+		bil.StudsOffsetWorldSpace = Vector3.new(math.random(base.Size.X,base.Size.X*2),0,math.random(base.Size.Z,base.Size.Z*2))
+	else
+		bil.StudsOffsetWorldSpace = Vector3.new(math.random(-base.Size.X*2,-base.Size.X),0,math.random(-base.Size.Z*2,-base.Size.Z))
+	end
+	local text = Instance.new("TextLabel",bil)
+	text.Size = UDim2.new(1,0,1,0)
+	text.Text = ""..textz
+	text.TextColor3 = color
+	text.BackgroundTransparency = 1
+	text.TextScaled = true
+	text.TextTransparency = 1
+	for i = 1,20 do
+		game:GetService("RunService").Stepped:Wait(50)
+		text.TextTransparency = NLerp(text.TextTransparency,0,.2)
+		bil.StudsOffsetWorldSpace = bil.StudsOffsetWorldSpace:lerp(Vector3.new(bil.StudsOffsetWorldSpace.X,base.Size.Y*2,bil.StudsOffsetWorldSpace.Z),.2)
+	end
+	game:GetService("Debris"):AddItem(bil,3)
+	if edit == true then
+		return bil
+	end
+	spawn(function()
+		wait(1)
+		for i = 1,20 do
+			game:GetService("RunService").Stepped:Wait(50)
+		text.TextTransparency = NLerp(text.TextTransparency,1,.2)
+		bil.StudsOffsetWorldSpace = bil.StudsOffsetWorldSpace:lerp(Vector3.new(bil.StudsOffsetWorldSpace.X,base.Size.Y*4,bil.StudsOffsetWorldSpace.Z),.2)
+		end
+	end)
+end
+function makesound(parent,id,volume,distance,pitch,looped)
+	local sound = Instance.new("Sound",parent)
+	sound.SoundId = "rbxassetid://"..id
+	sound.Volume = volume
+	sound.PlaybackSpeed = pitch
+	if looped == true then
+		sound.Looped = true
+	else
+		sound.Looped = false
+	end
+	if distance then
+		sound.MaxDistance = distance
+	else
+		sound.MaxDistance = 100
+	end
+	return sound
+end
+function steam()
+	spawn(function()
+		local dt = Instance.new("Part",workspace)
+		dt.CanCollide = false
+		dt.Anchored = true
+		dt.Size = Vector3.new(5,5,5)
+		dt.Transparency = 1
+		dt.CFrame = torso.CFrame
+		local parc = Instance.new("ParticleEmitter",dt)
+		parc.Texture = "rbxassetid://1196526222"
+		parc.Acceleration = Vector3.new(0,-2,0)
+		parc.EmissionDirection = Enum.NormalId.Right
+		parc.Lifetime = NumberRange.new(1.4)
+		parc.Rate = 100
+		parc.Speed = NumberRange.new(3)
+		parc.Size = NumberSequence.new(1)
+		parc.LightInfluence = 1e9
+		wait(1)
+		parc.Rate = 0
+		game:GetService("Debris"):AddItem(dt,1)
+	end)
+end
+function died()
+	dead = true
+	poses.attacking = true
+	spawn(function()
+		local s = makesound(humanroot,3362346832,4,100,1)
+		s:Play()
+		game:GetService("Debris"):AddItem(s,s.TimeLength+.5)
+	end)
+	game:GetService("RunService").Heartbeat:Connect(function()
+		hum.WalkSpeed = 0
+		hum:ChangeState("Dead")
+		humanroot.Anchored = true
+		for i,v in pairs(golem:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.Color = v.Color:lerp(Color3.fromRGB(255,0,0),.5)
+			end
+			if v:IsA("Decal") then
+				v.Color3 = v.Color3:lerp(Color3.fromRGB(255,0,0),.5)
+			end
+		end
+		root.C1 = root.C1:lerp(orgroot*CFrame.Angles(0,0,math.rad(90)),.3)
+		lh.C1 = lh.C1:lerp(orglh,.3)
+		ls.C1 = ls.C1:lerp(orgls,.3)
+		rh.C1 = rh.C1:lerp(orgrh,.3)
+		rs.C1 = rs.C1:lerp(orgrs,.3)
+	end)
+	if respawn == true then
+		wait(2)
+		steam()
+		spawn(function()
+			wait(3)
+			cgolem.Parent = workspace
+			cgolem.HumanoidRootPart.CFrame = humanrootcframe
+			golem:Destroy()
+		end)
+		for i,v in pairs(golem:GetChildren()) do
+			if v:IsA("BasePart") then
+				v:Destroy()
+			end
+		end
+	else
+		wait(2)
+		steam()
+		for i,v in pairs(golem:GetChildren()) do
+			if v:IsA("BasePart") then
+				v:Destroy()
+			end
+		end
+		wait(2)
+		golem:Destroy()
+	end
+end
+hum.Died:Connect(died)
+local humcheck = coroutine.wrap(function()
+	game:GetService("RunService").Stepped:Connect(function()
+		game:GetService("RunService").Stepped:Wait()
+		hum.WalkSpeed = ws
+		hum.PlatformStand = false
+		hum.Sit = false
+		hum.MaxHealth = 1e3
+		hum.HipHeight = -1.2
+	end)
+end)
+humcheck()
+local check = coroutine.wrap(function()
+game:GetService("RunService").Stepped:Connect(function()
+	game:GetService("RunService").Stepped:Wait()
+	if humanroot.Velocity.Y >= 30 then
+		inair = true
+	elseif humanroot.Velocity.Y <= -30 then
+		inair = true
+	else
+		inair = false
+	end
+	if humanroot.Velocity.magnitude < 5 and poses.attacking == false and dead == false then
+		poses.idle = true
+		poses.walking = false
+	elseif humanroot.Velocity.magnitude > 5 and poses.attacking == false and dead == false then
+		poses.idle = false
+		poses.walking = true
+	elseif poses.attacking == true then
+		poses.idle = false
+		poses.walking = false
+	end
+end)
+end)
+check()
+local sinandcosrunner = coroutine.wrap(function()
+game:GetService("RunService").Heartbeat:Connect(function()
+	ops = ops+.01
+end)
+end)
+sinandcosrunner()
+function applydamage(hum,min,max,ignoreshield)
+	local damage = math.random(min,max)
+	if ignoreshield == true then
+		hum.Health = hum.Health - damage
+		if hum.Parent:FindFirstChild("Head") then
+			spawn(function()
+				dmgi(hum.Parent.Head,damage,false,Color3.fromRGB(255,0,0))
+			end)
+		end
+	else
+		hum:TakeDamage(damage)
+		if hum.Parent:FindFirstChild("Head") and hum.Parent:FindFirstChildOfClass("ForceField") == nil then
+			spawn(function()
+				dmgi(hum.Parent.Head,damage,false,Color3.fromRGB(255,0,0))
+			end)
+		end
+	end
+end
+function DamageNearestTorso(Position,Distance)
+	local p = Position.Position
+	for i,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("Model") then
+			if v:FindFirstChild("Torso") and v:FindFirstChildOfClass("Humanoid") then
+				if v ~= golem and v.Name ~= "Villager" and v.Name ~= "Iron Golem" then
+					if (v.Torso.Position-p).magnitude <= Distance then
+						if v:FindFirstChildOfClass("Humanoid").MaxHealth <= 2e3 and v.Torso.Size.X <= 3.5 and v.Torso.Size.Y <= 3.5 and v.Torso.Size.Z <= 3.5 then
+							local bod = Instance.new("BodyVelocity",v.Torso)
+							bod.MaxForce = Vector3.new(1e9,1e9,1e9)
+							bod.Velocity = humanroot.CFrame.LookVector*40+Vector3.new(0,50,0)
+							game:GetService("Debris"):AddItem(bod,.1)
+						end
+						local s = makesound(v.Torso,3362346832,2,100,1)
+						s:Play()
+						game:GetService("Debris"):AddItem(s,s.TimeLength+.5)
+						applydamage(v:FindFirstChildOfClass("Humanoid"),damage*.8,damage*1,2,false)
+					end
+				end
+			elseif v:FindFirstChild("HumanoidRootPart") and v:FindFirstChildOfClass("Humanoid") then
+				if v ~= golem and v.Name ~= "Villager" and v.Name ~= "Iron Golem" then
+					if (v.HumanoidRootPart.Position-p).magnitude <= Distance then
+						if v.HumanoidRootPart.Size.X <= 5 and v.HumanoidRootPart.Size.Y <= 5 and v.HumanoidRootPart.Size.Z <= 5 then
+							local bod = Instance.new("BodyVelocity",v.HumanoidRootPart)
+							bod.MaxForce = Vector3.new(1e9,1e9,1e9)
+							bod.Velocity = humanroot.CFrame.LookVector*40+Vector3.new(0,50,0)
+							game:GetService("Debris"):AddItem(bod,.1)
+						end
+						local s = makesound(v.HumanoidRootPart,3362346832,2,100,1)
+						s:Play()
+						game:GetService("Debris"):AddItem(s,s.TimeLength+.5)
+						applydamage(v:FindFirstChildOfClass("Humanoid"),damage*.8,damage*1,2,false)
+					end
+				end
+			end
+		end
+	end
+end
+function attack()
+	if poses.attacking == true then return end
+	if dead == true then return end
+	poses.attacking = true
+	ws = 0
+	local speed = math.random(5,6)/10
+	for i = 1,10 do
+		game:GetService("RunService").Stepped:Wait(50)
+		root.C1 = root.C1:lerp(orgroot,.3)
+		rs.C1 = rs.C1:lerp(orgrs*CFrame.new(0,.4,0)*CFrame.Angles(math.rad(170),0,0),speed)
+		rh.C1 = rh.C1:lerp(orgrh,.3)
+		ls.C1 = ls.C1:lerp(orgls*CFrame.new(0,.4,0)*CFrame.Angles(math.rad(170),0,0),speed)
+		lh.C1 = lh.C1:lerp(orglh,.3)
+	end
+	DamageNearestTorso(humanroot.CFrame*CFrame.new(0,0,-3),5)
+	game:GetService("RunService").Stepped:Wait(50)
+	for i = 1,10 do
+		game:GetService("RunService").Stepped:Wait(50)
+		root.C1 = root.C1:lerp(orgroot,.3)
+		rs.C1 = rs.C1:lerp(orgrs,.3)
+		rh.C1 = rh.C1:lerp(orgrh,.3)
+		ls.C1 = ls.C1:lerp(orgls,.3)
+		lh.C1 = lh.C1:lerp(orglh,.3)
+	end
+	ws = .1
+	game:GetService("RunService").Stepped:Wait(150)
+	poses.attacking = false
+	ws = 12.3
+end
+function twitch()
+	spawn(function()
+		local dir = math.random(1,2)
+		if dir == 1 then
+		for i = 1,2 do
+			game:GetService("RunService").Stepped:Wait(50)
+			rs.C1 = rs.C1:lerp(orgrs*CFrame.Angles(math.rad(-15),0,0),.7)
+			rh.C1 = rh.C1:lerp(orgrh*CFrame.Angles(math.rad(15),0,0),.7)
+			ls.C1 = ls.C1:lerp(orgls*CFrame.Angles(math.rad(15),0,0),.7)
+			lh.C1 = lh.C1:lerp(orglh*CFrame.Angles(math.rad(-15),0,0),.7)
+		end
+		else
+		for i = 1,2 do
+			game:GetService("RunService").Stepped:Wait(50)
+			rs.C1 = rs.C1:lerp(orgrs*CFrame.Angles(math.rad(15),0,0),.7)
+			rh.C1 = rh.C1:lerp(orgrh*CFrame.Angles(math.rad(-15),0,0),.7)
+			ls.C1 = ls.C1:lerp(orgls*CFrame.Angles(math.rad(-15),0,0),.7)
+			lh.C1 = lh.C1:lerp(orglh*CFrame.Angles(math.rad(15),0,0),.7)
+		end
+		end
+	end)
+end
+head.Touched:Connect(function(h)
+	if h:IsA("BasePart") and h.Parent ~= golem and h.Parent.Name ~= "Iron Golem" and h.Parent.Name ~= "Villager" then
+		if h.Parent:FindFirstChildOfClass("Humanoid") and h.Parent:FindFirstChild("Torso") then
+			local getoff = Instance.new("BodyVelocity",h.Parent.Torso)
+			local point = CFrame.new(head.CFrame.Position,h.Parent.Torso.CFrame.Position).LookVector
+			getoff.MaxForce = Vector3.new(1e9,1e9,1e9)
+			getoff.Velocity = point*20+humanroot.CFrame.LookVector*20
+			game:GetService("Debris"):AddItem(getoff,.1)
+		elseif h.Parent:FindFirstChildOfClass("Humanoid") and h.Parent:FindFirstChild("HumanoidRootPart") then
+			local getoff = Instance.new("BodyVelocity",h.Parent.HumanoidRootPart)
+			local point = CFrame.new(head.CFrame.Position,h.Parent.HumanoidRootPart.CFrame.Position).LookVector
+			getoff.MaxForce = Vector3.new(1e9,1e9,1e9)
+			getoff.Velocity = point*20+humanroot.CFrame.LookVector*20
+			game:GetService("Debris"):AddItem(getoff,.1)
+		end
+	end
+end)
+local steps = coroutine.wrap(function()
+	while true do
+		game:GetService("RunService").Stepped:Wait()
+		if poses.walking == true and inair == false then
+		wait(4.5983745/humanroot.Velocity.Magnitude)
+		if poses.walking == true and inair == false then
+		spawn(function()
+		local s = makesound(humanroot,379482039,.75,50,1)
+		s:Play()
+		game:GetService("Debris"):AddItem(s,s.TimeLength+.5)
+		end)
+		end
+		end
+	end
+end)
+steps()
+hum.HealthChanged:Connect(function(dif)
+	if dif > 0 then
+	local hp = math.floor(chp - dif)
+	if hp < 0 then
+		spawn(function()
+			dmgi(head,math.abs(hp),false,Color3.fromRGB(0,170,0))
+		end)
+	end
+	if hp > 0 then
+		spawn(function()
+			dmgi(head,hp,false,Color3.fromRGB(255,0,0))
+		end)
+		if damaged == false then
+		damaged = true
+		if dmcd == true then
+			spawn(function()
+				local ff = Instance.new("ForceField",golem)
+				ff.Visible = false
+				game:GetService("Debris"):AddItem(ff,.75)
+			end)
+		end
+		spawn(function()
+			wait(3)
+			damaged = false
+		end)
+		end
+		spawn(function()
+		spawn(function()
+		local s = makesound(humanroot,3362346832,2,100,1)
+		s:Play()
+		game:GetService("Debris"):AddItem(s,s.TimeLength+.5)
+		end)
+		twitch()
+		for i = 1,5 do
+		game:GetService("RunService").Stepped:Wait(50)
+		for i,v in pairs(golem:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.Color = v.Color:lerp(Color3.fromRGB(255,0,0),.5)
+			end
+			if v:IsA("Decal") then
+				v.Color3 = v.Color3:lerp(Color3.fromRGB(255,0,0),.5)
+			end
+		end
+		end
+		for i = 1,5 do
+		for i,v in pairs(golem:GetDescendants()) do
+			if v:IsA("BasePart") then
+				if v.Name ~= "Nose" then
+					v.Color = v.Color:lerp(Color3.fromRGB(163,162,165),.5)
+				else
+					v.Color = v.Color:lerp(Color3.fromRGB(99,95,98),.5)
+				end
+			end
+			if v:IsA("Decal") then
+				v.Color3 = v.Color3:lerp(Color3.fromRGB(255,255,255),.5)
+			end
+		end
+		end
+		end)
+	end
+	end
+	chp = hum.Health
+end)
+function FollowNearestTorso(pos)
+	local list = game.Workspace:GetDescendants()
+	local torso = nil
+	local dist = 100
+	local temp = nil
+	local human = nil
+	local temp2 = nil
+	for x = 1, #list do
+		temp2 = list[x]
+		if friend == true then
+		if (temp2.className == "Model") and temp2:FindFirstChild("Torso") and (temp2 ~= script.Parent) and (temp2.Name ~= "Villager") and (temp2.Name ~= "Iron Golem") and (game:GetService("Players"):GetPlayerFromCharacter(temp2)==nil) then
+			temp = temp2:FindFirstChild("Torso")
+			human = temp2:FindFirstChildOfClass("Humanoid")
+			if (temp ~= nil) and (human ~= nil) and (human.Health > 0) then
+				if (temp.Position - pos).magnitude < dist then
+					torso = temp
+					dist = (temp.Position - pos).magnitude
+				end
+			end
+		elseif (temp2.className == "Model") and temp2:FindFirstChild("HumanoidRootPart") and (temp2 ~= script.Parent) and (temp2.Name ~= "Villager") and (temp2.Name ~= "Iron Golem") and (game:GetService("Players"):GetPlayerFromCharacter(temp2)==nil) then
+			temp = temp2:FindFirstChild("HumanoidRootPart")
+			human = temp2:FindFirstChildOfClass("Humanoid")
+			if (temp ~= nil) and (human ~= nil) and (human.Health > 0) then
+				if (temp.Position - pos).magnitude < dist then
+					torso = temp
+					dist = (temp.Position - pos).magnitude
+				end
+			end
+		end
+		else
+		if (temp2.className == "Model") and temp2:FindFirstChild("Torso") and (temp2 ~= script.Parent) and (temp2.Name ~= "Villager") and (temp2.Name ~= "Iron Golem") then
+			temp = temp2:FindFirstChild("Torso")
+			human = temp2:FindFirstChildOfClass("Humanoid")
+			if (temp ~= nil) and (human ~= nil) and (human.Health > 0) then
+				if (temp.Position - pos).magnitude < dist then
+					torso = temp
+					dist = (temp.Position - pos).magnitude
+				end
+			end
+		elseif (temp2.className == "Model") and temp2:FindFirstChild("HumanoidRootPart") and (temp2 ~= script.Parent) and (temp2.Name ~= "Villager") and (temp2.Name ~= "Iron Golem") then
+			temp = temp2:FindFirstChild("HumanoidRootPart")
+			human = temp2:FindFirstChildOfClass("Humanoid")
+			if (temp ~= nil) and (human ~= nil) and (human.Health > 0) then
+				if (temp.Position - pos).magnitude < dist then
+					torso = temp
+					dist = (temp.Position - pos).magnitude
+				end
+			end
+		end
+		end
+	end
+	return torso
+end
+local wander = coroutine.wrap(function()
+	while wait(math.random(4,10)) do
+		if following == false and dead == false then
+			local pos = humanroot.CFrame.Position
+			hum:MoveTo(pos+Vector3.new(math.random(-10,10),0,math.random(-10,10)))
+		end
+	end
+end)
+wander()
+local chase = coroutine.wrap(function()
+	game:GetService("RunService").Heartbeat:Connect(function()
+	local target = FollowNearestTorso(humanroot.CFrame.Position)
+	if target ~= nil and (humanroot.CFrame.Position-target.CFrame.Position).magnitude < 30 and target ~= nil and (humanroot.CFrame.Position-target.CFrame.Position).magnitude > 6 then
+		hum:MoveTo(target.CFrame.Position,target)
+		following = true
+		ws = 12.3
+	elseif target ~= nil and (humanroot.CFrame.Position-target.CFrame.Position).magnitude <= 6 then
+		attack()
+	elseif target ~= nil and (humanroot.CFrame.Position-target.CFrame.Position).magnitude >= 30 then
+		hum:MoveTo(target.CFrame.Position,target)
+		following = true
+		ws = 15.3
+	else
+		following = false
+		ws = 5.3
+	end
+	end)
+end)
+chase()
+game:GetService("RunService").Heartbeat:Connect(function()
+	damage = golem:WaitForChild("Configuration"):WaitForChild("Damage").Value
+	if poses.idle == true then
+		root.C1 = root.C1:lerp(orgroot,.3)
+		rs.C1 = rs.C1:lerp(orgrs*CFrame.Angles(math.rad(math.sin(ops*math.pi)*2.5),0,math.rad(math.cos(ops*math.pi)*1.25)),.3)
+		ls.C1 = ls.C1:lerp(orgls*CFrame.Angles(math.rad(math.sin(ops*math.pi)*2.5),0,math.rad(-math.cos(ops*math.pi)*1.25)),.3)
+		rh.C1 = rh.C1:lerp(orgrh,.3)
+		lh.C1 = lh.C1:lerp(orglh,.3)
+	end
+	if poses.walking == true then
+		root.C1 = root.C1:lerp(orgroot*CFrame.Angles(0,0,math.rad(math.sin(ops*math.pi*math.floor(humanroot.Velocity.Magnitude)/3)*5)),.3)
+		rs.C1 = rs.C1:lerp(orgrs*CFrame.Angles(math.rad(math.sin(ops*math.pi*math.floor(humanroot.Velocity.Magnitude)/3)*45),0,0),.3)
+		ls.C1 = ls.C1:lerp(orgls*CFrame.Angles(math.rad(-math.sin(ops*math.pi*math.floor(humanroot.Velocity.Magnitude)/3)*45),0,0),.3)
+		rh.C1 = rh.C1:lerp(orgrh*CFrame.Angles(math.rad(-math.sin(ops*math.pi*math.floor(humanroot.Velocity.Magnitude)/3)*45),0,0),.3)
+		lh.C1 = lh.C1:lerp(orglh*CFrame.Angles(math.rad(math.sin(ops*math.pi*math.floor(humanroot.Velocity.Magnitude)/3)*45),0,0),.3)
+	end
+end)
+end)()
+coroutine.wrap(function()
+local Copy = golem:Clone()
+local NPC = golem
+local Humanoid
+for i,v in pairs(NPC:GetChildren()) do 
+	if v:IsA('Humanoid') then 
+		Humanoid = v 
+	end 
+end
 
+if Humanoid then
+	Humanoid.Died:Connect(function()
+		wait(5)
+		Copy.Parent = NPC.Parent
+		Copy:MakeJoints()
+		NPC:Destroy()
+	end)
+else
+	warn('Cannot find Humanoid in Respawn Script!')
+end
+end)()
+golem:PivotTo(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,5,5))
