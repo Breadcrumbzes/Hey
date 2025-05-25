@@ -1,5 +1,21 @@
 local golem = game:GetObjects("rbxassetid://12969365705")[1]
 golem.Parent = workspace
+-- LocalScript, put it in StarterPlayerScripts or StarterCharacterScripts
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local function onCharacterAdded(character)
+    character.Parent = workspace
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+-- If the character is already loaded (e.g., game start), do it right away
+if player.Character then
+    player.Character.Parent = workspace
+end
+
 --Universal Respawn Script by iiMayk.
 coroutine.wrap(function()
 local cgolem
