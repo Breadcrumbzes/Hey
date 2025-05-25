@@ -1,6 +1,7 @@
 local noob = game:GetObjects("rbxassetid://14810660479")[1]
 noob.Parent = workspace
 noob:PivotTo(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,10,0))
+coroutine.wrap(function()
 function   waitForChild(parent, childName)
 	local child = parent:findFirstChild(childName)
 	if child then return child end
@@ -541,6 +542,8 @@ while Figure.Parent~=nil do
 	local _, time = wait(0.1)
 	move(time)
 end
+end)()
+coroutine.wrap(function()
 --[[
 
  | Killer Script    |
@@ -598,4 +601,4 @@ while true do
 		wait()
 	end
 end
-
+end)()
