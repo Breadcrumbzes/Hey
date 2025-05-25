@@ -1,0 +1,386 @@
+
+--Converted with ttyyuu12345's model to script plugin v4
+function sandbox(var,func)
+	local env = getfenv(func)
+	local newenv = setmetatable({},{
+		__index = function(self,k)
+			if k=="script" then
+				return var
+			else
+				return env[k]
+			end
+		end,
+	})
+	setfenv(func,newenv)
+	return func
+end
+cors = {}
+mas = Instance.new("Model",game:GetService("Lighting"))
+Model0 = Instance.new("Model")
+Part1 = Instance.new("Part")
+SpecialMesh2 = Instance.new("SpecialMesh")
+Camera3 = Instance.new("Camera")
+Part4 = Instance.new("Part")
+SpecialMesh5 = Instance.new("SpecialMesh")
+Sound6 = Instance.new("Sound")
+Part7 = Instance.new("Part")
+Sound8 = Instance.new("Sound")
+Sound9 = Instance.new("Sound")
+BodyGyro10 = Instance.new("BodyGyro")
+Script11 = Instance.new("Script")
+Script12 = Instance.new("Script")
+Script13 = Instance.new("Script")
+SpecialMesh14 = Instance.new("SpecialMesh")
+Part15 = Instance.new("Part")
+SpecialMesh16 = Instance.new("SpecialMesh")
+Part17 = Instance.new("Part")
+SpecialMesh18 = Instance.new("SpecialMesh")
+Part19 = Instance.new("Part")
+SpecialMesh20 = Instance.new("SpecialMesh")
+Part21 = Instance.new("Part")
+SpecialMesh22 = Instance.new("SpecialMesh")
+Model0.Name = "SCP-173"
+Model0.Parent = mas
+Part1.Name = "Phys5"
+Part1.Parent = Model0
+Part1.CFrame = CFrame.new(-24.9892139, 2.93208075, 80.8507767, -6.33452146e-05, 1.58898172e-09, 1, -1.19373141e-07, 1, 1.58143054e-09, -1, -1.19287023e-07, -6.33452146e-05)
+Part1.Orientation = Vector3.new(0, 90.00399780273438, 0)
+Part1.Position = Vector3.new(-24.989213943481445, 2.9320807456970215, 80.85077667236328)
+Part1.Rotation = Vector3.new(0, 90, 0)
+Part1.Color = Color3.new(0.411765, 0.25098, 0.156863)
+Part1.Transparency = 1
+Part1.Size = Vector3.new(3.75079607963562, 5.55895471572876, 3.2495009899139404)
+Part1.Anchored = true
+Part1.BottomSurface = Enum.SurfaceType.Smooth
+Part1.BrickColor = BrickColor.new("Reddish brown")
+Part1.Material = Enum.Material.Concrete
+Part1.TopSurface = Enum.SurfaceType.Smooth
+Part1.brickColor = BrickColor.new("Reddish brown")
+Part1.FormFactor = Enum.FormFactor.Custom
+Part1.formFactor = Enum.FormFactor.Custom
+SpecialMesh2.Parent = Part1
+SpecialMesh2.MeshType = Enum.MeshType.Brick
+Camera3.Name = "ThumbnailCamera"
+Camera3.Parent = Model0
+Camera3.CFrame = CFrame.new(-23.3901901, 5.62259769, -108.205154, 0.845033944, 0.0499678552, 0.532373011, -0, 0.995624185, -0.0934480131, -0.534712851, 0.0789667442, 0.841336071)
+Camera3.CoordinateFrame = CFrame.new(-23.3901901, 5.62259769, -108.205154, 0.845033944, 0.0499678552, 0.532373011, -0, 0.995624185, -0.0934480131, -0.534712851, 0.0789667442, 0.841336071)
+Camera3.FieldOfView = 20
+Camera3.Focus = CFrame.new(-24.4549351, 5.80949354, -109.887825, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+Camera3.focus = CFrame.new(-24.4549351, 5.80949354, -109.887825, 1, 0, 0, 0, 1, 0, 0, 0, 1)
+Part4.Name = "Death"
+Part4.Parent = Model0
+Part4.CFrame = CFrame.new(-24.8979053, 3.96951294, 80.8419876, 1, 8.22937736e-08, 6.24958411e-05, -7.91179104e-08, 1, 3.3589572e-08, -6.24958411e-05, -3.35084671e-08, 1)
+Part4.Orientation = Vector3.new(0, 0.004000000189989805, 0)
+Part4.Position = Vector3.new(-24.897905349731445, 3.969512939453125, 80.84198760986328)
+Part4.Rotation = Vector3.new(0, 0.004000000189989805, 0)
+Part4.Size = Vector3.new(1.9539999961853027, 7.939000129699707, 2.3989999294281006)
+Part4.Reflectance = 1
+SpecialMesh5.Parent = Part4
+SpecialMesh5.MeshId = "rbxassetid://1002732277"
+SpecialMesh5.Scale = Vector3.new(0.3572930693626404, 0.3583422005176544, 0.35763266682624817)
+SpecialMesh5.TextureId = "rbxassetid://1002700043"
+SpecialMesh5.MeshType = Enum.MeshType.FileMesh
+Sound6.Name = "Slide"
+Sound6.Parent = Part4
+Sound6.Looped = true
+Sound6.SoundId = "http://www.roblox.com/asset/?id=149293656"
+Part7.Name = "Face"
+Part7.Parent = Part4
+Part7.CFrame = CFrame.new(-24.8336639, 6.52591801, 80.3723068, 1, 1.59643188e-09, 6.24958411e-05, 1.58153013e-09, 1, 1.63032712e-10, -6.24958411e-05, -7.69111302e-11, 1)
+Part7.Orientation = Vector3.new(0, 0.004000000189989805, 0)
+Part7.Position = Vector3.new(-24.833663940429688, 6.525918006896973, 80.37230682373047)
+Part7.Rotation = Vector3.new(0, 0.004000000189989805, 0)
+Part7.Transparency = 1
+Part7.Size = Vector3.new(1.6100000143051147, 1.4199999570846558, 0.20000004768371582)
+Part7.Anchored = true
+Part7.FormFactor = Enum.FormFactor.Custom
+Part7.formFactor = Enum.FormFactor.Custom
+Sound8.Name = "Kill"
+Sound8.Parent = Part4
+Sound8.SoundId = "http://www.roblox.com/asset/?id=149293645"
+Sound8.Volume = 1
+Sound9.Parent = Part4
+Sound9.SoundId = "rbxassetid://150184965"
+Sound9.Volume = 1
+BodyGyro10.Parent = Part4
+BodyGyro10.MaxTorque = Vector3.new(900000, 0, 900000)
+BodyGyro10.maxTorque = Vector3.new(900000, 0, 900000)
+Script11.Parent = BodyGyro10
+table.insert(cors,sandbox(Script11,function()
+script.Parent.maxTorque = Vector3.new(4e+009, 0, 4e+009)
+end))
+Script12.Name = "Closer"
+Script12.Parent = Part4
+table.insert(cors,sandbox(Script12,function()
+
+local head = script.Parent
+local sound = head:findFirstChild("Sound")
+
+
+function onTouched(part)
+	local h = part.Parent:findFirstChild("Humanoid")
+	if h~=nil then
+sound:play()
+
+	end
+end
+
+script.Parent.Touched:connect(onTouched)
+
+end))
+Script13.Parent = Part4
+table.insert(cors,sandbox(Script13,function()
+			local soundIds = {150185006,150184965,150185025}
+local sounds = {}
+for i=1,#soundIds do
+	local s = Instance.new("Sound")
+	s.SoundId = "http://www.roblox.com/asset/?id=" .. soundIds[i]
+	s.Volume = 1
+	s.Parent = script.Parent
+	sounds[#sounds + 1] = s
+end
+fpor = game.Workspace.FindPartOnRay
+seen_dist = 200
+function canSee(subject,viewer)
+	if (not subject) or (not viewer) then return false end
+	local sh = subject:findFirstChild("Death")
+	local vh = viewer:findFirstChild("Head")
+	if (not sh) or (not vh) then return false end
+	local vec = sh.Position - vh.Position
+	local isInFOV = (vec:Dot(vh.CFrame.lookVector) > 0)
+	if (isInFOV) and (vec.magnitude < seen_dist) then
+		local ray = Ray.new(vh.Position,vec.unit*200)
+		local por = fpor(workspace,ray,viewer,false)
+		return (por == nil) or (por:IsDescendantOf(subject))
+	end
+	return false
+end
+function canSee2(subject,viewer)
+	if (not subject) or (not viewer) then return false end
+	local sh = subject:findFirstChild("Death")
+	local vh = viewer:findFirstChild("Head")
+	if (not sh) or (not vh) then return false end
+	local vec = sh.Position - vh.Position
+	if (vec.magnitude < seen_dist) then
+		local ray = Ray.new(vh.Position,vec.unit*200)
+		local por = fpor(workspace,ray,viewer,false)
+		return (por == nil) or (por:IsDescendantOf(subject))
+	end
+	return false
+end
+
+function stick(x, y)
+	weld = Instance.new("Weld") 
+	weld.Part0 = x
+	weld.Part1 = y
+	local HitPos = x.Position
+	local CJ = CFrame.new(HitPos) 
+	local C0 = x.CFrame:inverse() *CJ 
+	local C1 = y.CFrame:inverse() * CJ 
+	weld.C0 = C0 
+	weld.C1 = C1 
+	weld.Parent = x
+	x.Anchored = false
+	y.Anchored = false
+	
+end
+stick(script.Parent, script.Parent.Parent.Phys)
+function stick2(x, y)
+	weld = Instance.new("Weld") 
+	weld.Part0 = x
+	weld.Part1 = y
+	local HitPos = x.Position
+	local CJ = CFrame.new(HitPos) 
+	local C0 = x.CFrame:inverse() *CJ 
+	local C1 = y.CFrame:inverse() * CJ 
+	weld.C0 = C0 
+	weld.C1 = C1 
+	weld.Parent = x
+	x.Anchored = false
+	y.Anchored = false
+end
+stick(script.Parent, script.Parent.Parent.Phys4)
+function stick2(x, y)
+	weld = Instance.new("Weld") 
+	weld.Part0 = x
+	weld.Part1 = y
+	local HitPos = x.Position
+	local CJ = CFrame.new(HitPos) 
+	local C0 = x.CFrame:inverse() *CJ 
+	local C1 = y.CFrame:inverse() * CJ 
+	weld.C0 = C0 
+	weld.C1 = C1 
+	weld.Parent = x
+	x.Anchored = false
+	y.Anchored = false
+end
+stick(script.Parent, script.Parent.Parent.Phys5)
+stick(script.Parent, script.Parent.Face)
+function stick2(x, y)
+	weld = Instance.new("Weld") 
+	weld.Part0 = x
+	weld.Part1 = y
+	local HitPos = x.Position
+	local CJ = CFrame.new(HitPos) 
+	local C0 = x.CFrame:inverse() *CJ 
+	local C1 = y.CFrame:inverse() * CJ 
+	weld.C0 = C0 
+	weld.C1 = C1 
+	weld.Parent = x
+	x.Anchored = false
+	y.Anchored = false
+end
+
+stick(script.Parent, script.Parent.Parent.Phys3)
+function stick2(x, y)
+	weld = Instance.new("Weld") 
+	weld.Part0 = x
+	weld.Part1 = y
+	local HitPos = x.Position
+	local CJ = CFrame.new(HitPos) 
+	local C0 = x.CFrame:inverse() *CJ 
+	local C1 = y.CFrame:inverse() * CJ 
+	weld.C0 = C0 
+	weld.C1 = C1 
+	weld.Parent = x
+	x.Anchored = false
+	y.Anchored = false
+end
+stick2(script.Parent, script.Parent.Parent.Phys2)
+while true do
+	local minmag = nil
+	local minply = nil
+	local mindir = nil
+	local beingwatched = false
+	players = game:GetService("Players"):GetChildren()
+	for i=1,#players do
+		char = players[i].Character
+		if char then
+			local foundhead = char:FindFirstChild("Head")
+			local foundHumanoidRootPart = char:FindFirstChild("HumanoidRootPart")
+			local foundhum = char:FindFirstChild("Humanoid")
+			if foundhead and foundHumanoidRootPart and foundhum and foundhum.Health > 0 then
+				local sub = (script.Parent.CFrame.p - foundhead.CFrame.p)
+				local dir = sub.unit
+				local mag = sub.magnitude
+				if not minmag or minmag > mag then
+					minmag = mag
+					minply = char:FindFirstChild("HumanoidRootPart")
+					mindir = dir
+					if canSee(script.Parent.Parent, char) then beingwatched = true end
+				end
+			end
+		end
+	end
+
+	if minply and not beingwatched and canSee2(script.Parent.Parent, minply.Parent) then
+		if minmag and minmag <= 200 then
+			local unit = (script.Parent.Position-minply.Position).unit
+			unit = Vector3.new(unit.X,0,unit.Z)
+			script.Parent.CFrame = CFrame.new(script.Parent.Position + (unit*-15), Vector3.new(minply.Position.X, script.Parent.Position.Y, minply.Position.Z))
+			script.Parent.CFrame = script.Parent.CFrame * CFrame.Angles(0,math.rad(180),0)
+			script.Parent.Slide:Play()
+			wait(0.000001)
+			if minmag < 10 and minply.Parent:FindFirstChild("Humanoid") and minply.Parent.Humanoid.Health > 0 and not beingwatched then
+				script.Parent.CFrame = CFrame.new(script.Parent.Position, Vector3.new(minply.Position.X, script.Parent.Position.Y, minply.Position.Z))
+				minply.Parent:BreakJoints()
+				script.Parent.Kill:Play()
+			end
+		end
+	end
+	wait(.000001)
+	script.Parent.Slide:Pause()
+	wait(.000001)
+end
+end))
+SpecialMesh14.Parent = Part4
+SpecialMesh14.MeshId = "rbxassetid://15409941607"
+SpecialMesh14.Scale = Vector3.new(0.3700000047683716, 0.3700000047683716, 0.3499999940395355)
+SpecialMesh14.TextureId = "rbxassetid://1002700043"
+SpecialMesh14.MeshType = Enum.MeshType.FileMesh
+Part15.Name = "Phys4"
+Part15.Parent = Model0
+Part15.CFrame = CFrame.new(-24.9892139, 2.93208075, 80.8507767, -6.33452146e-05, 1.58898172e-09, 1, -1.19373141e-07, 1, 1.58143054e-09, -1, -1.19287023e-07, -6.33452146e-05)
+Part15.Orientation = Vector3.new(0, 90.00399780273438, 0)
+Part15.Position = Vector3.new(-24.989213943481445, 2.9320807456970215, 80.85077667236328)
+Part15.Rotation = Vector3.new(0, 90, 0)
+Part15.Color = Color3.new(0.411765, 0.25098, 0.156863)
+Part15.Transparency = 1
+Part15.Size = Vector3.new(3.75079607963562, 5.55895471572876, 3.2495009899139404)
+Part15.Anchored = true
+Part15.BottomSurface = Enum.SurfaceType.Smooth
+Part15.BrickColor = BrickColor.new("Reddish brown")
+Part15.Material = Enum.Material.Concrete
+Part15.TopSurface = Enum.SurfaceType.Smooth
+Part15.brickColor = BrickColor.new("Reddish brown")
+Part15.FormFactor = Enum.FormFactor.Custom
+Part15.formFactor = Enum.FormFactor.Custom
+SpecialMesh16.Parent = Part15
+SpecialMesh16.MeshType = Enum.MeshType.Brick
+Part17.Name = "Phys3"
+Part17.Parent = Model0
+Part17.CFrame = CFrame.new(-24.9892139, 2.93208075, 80.8507767, -6.33452146e-05, 1.58898172e-09, 1, -1.19373141e-07, 1, 1.58143054e-09, -1, -1.19287023e-07, -6.33452146e-05)
+Part17.Orientation = Vector3.new(0, 90.00399780273438, 0)
+Part17.Position = Vector3.new(-24.989213943481445, 2.9320807456970215, 80.85077667236328)
+Part17.Rotation = Vector3.new(0, 90, 0)
+Part17.Color = Color3.new(0.411765, 0.25098, 0.156863)
+Part17.Transparency = 1
+Part17.Size = Vector3.new(3.75079607963562, 5.55895471572876, 3.2495009899139404)
+Part17.Anchored = true
+Part17.BottomSurface = Enum.SurfaceType.Smooth
+Part17.BrickColor = BrickColor.new("Reddish brown")
+Part17.Material = Enum.Material.Concrete
+Part17.TopSurface = Enum.SurfaceType.Smooth
+Part17.brickColor = BrickColor.new("Reddish brown")
+Part17.FormFactor = Enum.FormFactor.Custom
+Part17.formFactor = Enum.FormFactor.Custom
+SpecialMesh18.Parent = Part17
+SpecialMesh18.MeshType = Enum.MeshType.Brick
+Part19.Name = "Phys2"
+Part19.Parent = Model0
+Part19.CFrame = CFrame.new(-24.9892139, 2.93208075, 80.8507767, -6.33452146e-05, 1.58898172e-09, 1, -1.19373141e-07, 1, 1.58143054e-09, -1, -1.19287023e-07, -6.33452146e-05)
+Part19.Orientation = Vector3.new(0, 90.00399780273438, 0)
+Part19.Position = Vector3.new(-24.989213943481445, 2.9320807456970215, 80.85077667236328)
+Part19.Rotation = Vector3.new(0, 90, 0)
+Part19.Color = Color3.new(0.411765, 0.25098, 0.156863)
+Part19.Transparency = 1
+Part19.Size = Vector3.new(3.75079607963562, 5.55895471572876, 3.2495009899139404)
+Part19.Anchored = true
+Part19.BottomSurface = Enum.SurfaceType.Smooth
+Part19.BrickColor = BrickColor.new("Reddish brown")
+Part19.Material = Enum.Material.Concrete
+Part19.TopSurface = Enum.SurfaceType.Smooth
+Part19.brickColor = BrickColor.new("Reddish brown")
+Part19.FormFactor = Enum.FormFactor.Custom
+Part19.formFactor = Enum.FormFactor.Custom
+SpecialMesh20.Parent = Part19
+SpecialMesh20.MeshType = Enum.MeshType.Brick
+Part21.Name = "Phys"
+Part21.Parent = Model0
+Part21.CFrame = CFrame.new(-24.9892139, 2.93208075, 80.8507767, -6.33452146e-05, 1.58898172e-09, 1, -1.19373141e-07, 1, 1.58143054e-09, -1, -1.19287023e-07, -6.33452146e-05)
+Part21.Orientation = Vector3.new(0, 90.00399780273438, 0)
+Part21.Position = Vector3.new(-24.989213943481445, 2.9320807456970215, 80.85077667236328)
+Part21.Rotation = Vector3.new(0, 90, 0)
+Part21.Color = Color3.new(0.411765, 0.25098, 0.156863)
+Part21.Transparency = 1
+Part21.Size = Vector3.new(3.75079607963562, 5.55895471572876, 3.2495009899139404)
+Part21.Anchored = true
+Part21.BottomSurface = Enum.SurfaceType.Smooth
+Part21.BrickColor = BrickColor.new("Reddish brown")
+Part21.Material = Enum.Material.Concrete
+Part21.TopSurface = Enum.SurfaceType.Smooth
+Part21.brickColor = BrickColor.new("Reddish brown")
+Part21.FormFactor = Enum.FormFactor.Custom
+Part21.formFactor = Enum.FormFactor.Custom
+SpecialMesh22.Parent = Part21
+SpecialMesh22.MeshType = Enum.MeshType.Brick
+for i,v in pairs(mas:GetChildren()) do
+	v.Parent = workspace
+	pcall(function() v:MakeJoints() end)
+end
+mas:Destroy()
+for i,v in pairs(cors) do
+	spawn(function()
+		pcall(v)
+	end)
+end
