@@ -244,16 +244,19 @@ end
 
 end)()
 end
+wait(1)
 for i,v in pairs(model:GetDescendants()) do
 if v.Name == "qPerfectionWeld" then
+if v.Parent then
 perfection(v.Parent)
+end
 end
 end
 --Fully made by Rufus14 (with a little help from Weld Plugin by popomcnuggets)
 --also script is commented so you can learn something
 --animations are made with :lerp()
 --you can convert the model to use it in script builder
-local scp = script.Parent
+local scp = model
 local torso = scp.Torso
 local head = scp.Head
 local leftarm = scp["Left Arm"]
