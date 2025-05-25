@@ -153,7 +153,7 @@ end
 -- Proper usage
 wait(1)
 
-local model = workspace:FindFirstChild("YourModelName")  -- Replace with actual model reference!
+
 if model then
     for _, v in pairs(model:GetDescendants()) do
         if v and v.Name == "qPerfectionWeld" then
@@ -712,4 +712,3 @@ while heartbeat:wait() do --check animations and other things
 		end
 	end
 end
-
