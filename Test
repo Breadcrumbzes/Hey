@@ -1,1 +1,1 @@
-game.Players.LocalPlayer.Sit = true
+game.Players.LocalPlayer.Humanoid.Sit = true
