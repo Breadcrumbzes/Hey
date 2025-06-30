@@ -526,59 +526,7 @@ SpecialMesh44.VertexColor = Vector3.new(1, 0, 0)
 SpecialMesh44.MeshType = Enum.MeshType.FileMesh
 Script45.Name = "AI"
 Script45.Parent = Model0
-table.insert(cors,sandbox(Script45,function()
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
 
--- Settings
-local DAMAGE_RADIUS = 20
-local DAMAGE_PER_SECOND = 1
-local SPEED = 600 -- Insanely fast
-local npc = Script45.Parent -- Put NPC here
-npc:SetPrimaryPartCFrame(CFrame.new(0, 0, 500))
-
-local root = npc:WaitForChild("HumanoidRootPart")
-local humanoid = npc:WaitForChild("Humanoid")
-local sound = npc:FindFirstChild("BK arrival")
-local hitbox = npc:FindFirstChild("hitbox")
-
--- Play BK arrival sound
-if sound then
-	sound:Play()
-else
-	warn("BloodKillerController: BK arrival sound not found.")
-end
-
--- Movement and tracking
-RunService.RenderStepped:Connect(function(dt)
-	if not humanoid or humanoid.Health <= 0 then return end
-	local target = Character:FindFirstChild("HumanoidRootPart")
-	if not target then return end
-
-	-- Direction and velocity
-	local direction = (target.Position - root.Position).Unit
-	root.Velocity = direction * SPEED
-	root.CFrame = CFrame.lookAt(root.Position, target.Position)
-end)
-
--- Damage loop
-task.spawn(function()
-	while humanoid and humanoid.Health > 0 do
-		local targetRoot = Character:FindFirstChild("HumanoidRootPart")
-		if targetRoot then
-			local dist = (root.Position - targetRoot.Position).Magnitude
-			if dist <= DAMAGE_RADIUS then
-				Humanoid:TakeDamage(DAMAGE_PER_SECOND)
-			end
-		end
-		task.wait(1)
-	end
-end)
-
-end))
 Part46.Name = "hitbox"
 Part46.Parent = Model0
 Part46.CFrame = CFrame.new(24.3999996, 4.00000381, -77.6999969, 1, 0, 0, 0, 1, 0, 0, 0, 1)
@@ -1191,6 +1139,59 @@ Sound70.Name = "BK arrival"
 Sound70.Parent = Model0
 Sound70.SoundId = "rbxassetid://9043353944"
 Sound70.Volume = 0.10000000149011612
+table.insert(cors,sandbox(Script45,function()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- Settings
+local DAMAGE_RADIUS = 20
+local DAMAGE_PER_SECOND = 1
+local SPEED = 600 -- Insanely fast
+local npc = Script45.Parent -- Put NPC here
+npc:SetPrimaryPartCFrame(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,50,0))
+
+local root = npc:WaitForChild("HumanoidRootPart")
+local humanoid = npc:WaitForChild("Humanoid")
+local sound = npc:FindFirstChild("BK arrival")
+local hitbox = npc:FindFirstChild("hitbox")
+
+-- Play BK arrival sound
+if sound then
+	sound:Play()
+else
+	warn("BloodKillerController: BK arrival sound not found.")
+end
+
+-- Movement and tracking
+RunService.RenderStepped:Connect(function(dt)
+	if not humanoid or humanoid.Health <= 0 then return end
+	local target = Character:FindFirstChild("HumanoidRootPart")
+	if not target then return end
+
+	-- Direction and velocity
+	local direction = (target.Position - root.Position).Unit
+	root.Velocity = direction * SPEED
+	root.CFrame = CFrame.lookAt(root.Position, target.Position)
+end)
+
+-- Damage loop
+task.spawn(function()
+	while humanoid and humanoid.Health > 0 do
+		local targetRoot = Character:FindFirstChild("HumanoidRootPart")
+		if targetRoot then
+			local dist = (root.Position - targetRoot.Position).Magnitude
+			if dist <= DAMAGE_RADIUS then
+				Humanoid:TakeDamage(DAMAGE_PER_SECOND)
+			end
+		end
+		task.wait(1)
+	end
+end)
+
+end))
 for i,v in pairs(mas:GetChildren()) do
 	v.Parent = workspace
 	pcall(function() v:MakeJoints() end)
