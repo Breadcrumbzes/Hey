@@ -1,1 +1,1 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/wallwalker.lua"))()
+game.Players.LocalPlayer:Kick("POOP POOP POOP POOP POOP POOP POOP POOP POOP WIN WINS 2024!!!")
