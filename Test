@@ -537,7 +537,7 @@ local Humanoid = Character:WaitForChild("Humanoid")
 local DAMAGE_RADIUS = 20
 local DAMAGE_PER_SECOND = 1
 local SPEED = 600 -- Insanely fast
-local npc = script.Parent -- Put NPC here
+local npc = Script45.Parent -- Put NPC here
 npc:SetPrimaryPartCFrame(CFrame.new(0, 0, 500))
 
 local root = npc:WaitForChild("HumanoidRootPart")
@@ -599,7 +599,7 @@ Weld47.part1 = Part46
 Script48.Name = "Animate"
 Script48.Parent = Model0
 table.insert(cors,sandbox(Script48,function()
-local Figure = script.Parent
+local Figure = Script48.Parent
 local Torso = Figure:WaitForChild("Torso")
 local RightShoulder = Torso:WaitForChild("Right Shoulder")
 local LeftShoulder = Torso:WaitForChild("Left Shoulder")
