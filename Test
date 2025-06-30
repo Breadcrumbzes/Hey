@@ -43,7 +43,7 @@ local function ragdollCharacter(character)
 	-- Launch the player into the air
 	local root = character:FindFirstChild("HumanoidRootPart")
 	if root then
-		root.Velocity = Vector3.new(0, 200, 0) -- strong upward launch
+		root.Velocity = Vector3.new(math.random(-150,150), 2000, math.random(-150,150)) -- strong upward launch
 	end
 
 	-- Play sound in head
