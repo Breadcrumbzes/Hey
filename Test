@@ -64,6 +64,7 @@ local function run()
 	local character = player.Character or player.CharacterAdded:Wait()
 	local humanoid = character:WaitForChild("Humanoid")
 	humanoid.BreakJointsOnDeath = false
+humanoid.PlatformStand = true
 	task.wait(0.1) -- tiny delay just in case
 	ragdollCharacter(character)
 end
