@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-
+player.Character.Humanoid.Health = 0
 local function convertMotor6DToRagdoll(motor)
 	local part0 = motor.Part0
 	local part1 = motor.Part1
