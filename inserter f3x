@@ -37,7 +37,9 @@ local function InvokeServerAsync(args)
 end
 
 local function CreatePart(cf, parent)
-	InvokeServerAsync({"CreatePart", "Normal", cf, parent})
+local part
+part = InvokeServerAsync({"CreatePart", "Normal", cf, parent})
+return part
 end
 
 local function Resize(part, size, cf)
