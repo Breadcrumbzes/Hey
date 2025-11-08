@@ -4,90 +4,74 @@ local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local tool
 
-local function updatef3x()
-	for _, v in pairs(player:GetDescendants()) do
+for _, v in pairs(player:GetDescendants()) do
+	if v.Name == "SyncAPI" and v:FindFirstChild("ServerEndpoint") then
+		tool = v.Parent
+		break
+	end
+end
+
+if not tool then
+	for _, v in pairs(ReplicatedStorage:GetDescendants()) do
 		if v.Name == "SyncAPI" and v:FindFirstChild("ServerEndpoint") then
 			tool = v.Parent
 			break
 		end
 	end
-	if not tool then
-		for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-			if v.Name == "SyncAPI" and v:FindFirstChild("ServerEndpoint") then
-				tool = v.Parent
-				break
-			end
-		end
-	end
 end
-updatef3x()
-if not tool then return end
 
 local remote = tool:WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
 
-local function InvokeServerAsync(args)
-	task.spawn(function()
-		local success, result = pcall(function()
-			return remote:InvokeServer(unpack(args))
-		end)
-		if not success then
-			warn("Remote call failed:", result)
-		end
-	end)
-end
-
 local function CreatePart(cf, parent)
-	local part
-	part = InvokeServerAsync({"CreatePart", "Normal", cf, parent})
-	return part
+	return remote:InvokeServer("CreatePart", "Normal", cf, parent)
 end
 
 local function Resize(part, size, cf)
-	InvokeServerAsync({"SyncResize", {{Part = part, CFrame = cf, Size = size}}})
+	remote:InvokeServer("SyncResize", {{Part = part, CFrame = cf, Size = size}})
 end
 
 local function SetCollision(part, boolean)
-	InvokeServerAsync({"SyncCollision", {{Part = part, CanCollide = boolean}}})
+	remote:InvokeServer("SyncCollision", {{Part = part, CanCollide = boolean}})
 end
 
 local function SetAnchor(boolean, part)
-	InvokeServerAsync({"SyncAnchor", {{Part = part, Anchored = boolean}}})
+	remote:InvokeServer("SyncAnchor", {{Part = part, Anchored = boolean}})
 end
 
 local function Color(part, color)
-	InvokeServerAsync({"SyncColor", {{Part = part, Color = color, UnionColoring = false}}})
+	remote:InvokeServer("SyncColor", {{Part = part, Color = color, UnionColoring = false}})
 end
 
 local function SetTrans(part, trans)
-	InvokeServerAsync({"SyncMaterial", {{Part = part, Transparency = trans}}})
+	remote:InvokeServer("SyncMaterial", {{Part = part, Transparency = trans}})
 end
 
 local function SpawnDecal(part, face)
-	InvokeServerAsync({"CreateTextures", {{Part = part, Face = face, TextureType = "Decal"}}})
+	remote:InvokeServer("CreateTextures", {{Part = part, Face = face, TextureType = "Decal"}})
 end
 
 local function AddDecal(part, asset, face)
-	InvokeServerAsync({"SyncTexture", {{Part = part, Face = face, TextureType = "Decal", Texture = "rbxassetid://"..asset}}})
+	remote:InvokeServer("SyncTexture", {{Part = part, Face = face, TextureType = "Decal", Texture = "rbxassetid://"..asset}})
 end
 
 local function SetName(part, name)
-	InvokeServerAsync({"SetName", {part}, name})
+	remote:InvokeServer("SetName", {part}, name)
 end
 
 local function AddMesh(part)
-	InvokeServerAsync({"CreateMeshes", {{Part = part}}})
+	remote:InvokeServer("CreateMeshes", {{Part = part}})
 end
 
 local function SetMesh(part, meshId)
-	InvokeServerAsync({"SyncMesh", {{Part = part, MeshId = meshId}}})
+	remote:InvokeServer("SyncMesh", {{Part = part, MeshId = meshId}})
 end
 
 local function MeshResize(part, scale)
-	InvokeServerAsync({"SyncMesh", {{Part = part, Scale = scale}}})
+	remote:InvokeServer("SyncMesh", {{Part = part, Scale = scale}})
 end
 
 local function DestroyPart(part)
-	InvokeServerAsync({"Remove", {part}})
+	remote:InvokeServer("Remove", {part})
 end
 
 local obj = game:GetObjects("rbxassetid://8192195260")[1]
@@ -99,38 +83,31 @@ wait(0.1)
 for _, basepart in pairs(obj:GetDescendants()) do
 	if basepart:IsA("BasePart") then
 		task.spawn(function()
-	
-		local newPart = CreatePart(basepart.CFrame, workspace)
+			local newPart = remote:InvokeServer("CreatePart", "Normal", basepart.CFrame, workspace)
+
 			for _, decal in pairs(basepart:GetChildren()) do
 				if decal:IsA("Decal") then
-					SpawnDecal(newPart, decal.Face)
-					AddDecal(newPart, decal.Texture, decal.Face)
+					remote:InvokeServer("CreateTextures", {{Part = newPart, Face = decal.Face, TextureType = "Decal"}})
+					remote:InvokeServer("SyncTexture", {{Part = newPart, Face = decal.Face, TextureType = "Decal", Texture = "rbxassetid://"..decal.Texture}})
 				end
 			end
-repeat 
-	wait()
-until newPart 
 
+			remote:InvokeServer("SyncCollision", {{Part = newPart, CanCollide = basepart.CanCollide}})
+			remote:InvokeServer("SyncAnchor", {{Part = newPart, Anchored = basepart.Anchored}})
+			remote:InvokeServer("SyncColor", {{Part = newPart, Color = basepart.Color, UnionColoring = false}})
+			remote:InvokeServer("SyncMaterial", {{Part = newPart, Transparency = basepart.Transparency}})
+			remote:InvokeServer("SyncResize", {{Part = newPart, CFrame = basepart.CFrame, Size = basepart.Size}})
+			remote:InvokeServer("SetName", {newPart}, basepart.Name)
 
-		SetCollision(newPart, basepart.CanCollide)
-		SetAnchor(basepart.Anchored, newPart)
-		Color(newPart, basepart.Color)
-		SetTrans(newPart, basepart.Transparency)
-		Resize(newPart, basepart.Size, basepart.CFrame)
-		SetName(newPart, basepart.Name)
-
-		for _, mesh in pairs(basepart:GetChildren()) do
-			if mesh:IsA("SpecialMesh") then
-				AddMesh(newPart)
-
-					SetMesh(newPart, mesh.MeshId)
-
-					MeshResize(newPart, mesh.Scale)
-
+			for _, mesh in pairs(basepart:GetChildren()) do
+				if mesh:IsA("SpecialMesh") then
+					remote:InvokeServer("CreateMeshes", {{Part = newPart}})
+					remote:InvokeServer("SyncMesh", {{Part = newPart, MeshId = mesh.MeshId}})
+					remote:InvokeServer("SyncMesh", {{Part = newPart, Scale = mesh.Scale}})
+				end
 			end
-		end
 		end)
 	end
 end
 
-DestroyPart(obj)
+obj:Destroy()
