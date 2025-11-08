@@ -37,9 +37,9 @@ local function InvokeServerAsync(args)
 end
 
 local function CreatePart(cf, parent)
-local part
-part = InvokeServerAsync({"CreatePart", "Normal", cf, parent})
-return part
+	local part
+	part = InvokeServerAsync({"CreatePart", "Normal", cf, parent})
+	return part
 end
 
 local function Resize(part, size, cf)
@@ -92,22 +92,23 @@ end
 
 local obj = game:GetObjects("rbxassetid://8192195260")[1]
 obj.Parent = workspace
-obj:SetPrimaryPartCFrame(CFrame.new(0,100,0))
+obj:PivotTo(CFrame.new(0,100,0))
+
 wait(0.1)
 
 for _, basepart in pairs(obj:GetDescendants()) do
 	if basepart:IsA("BasePart") then
-		CreatePart(basepart.CFrame, workspace)
-		local newPart = basepart
+		local newPart
+		newPart = CreatePart(basepart.CFrame, workspace)
+		
 
-		if basepart.Decal then
 			for _, decal in pairs(basepart:GetChildren()) do
 				if decal:IsA("Decal") then
 					SpawnDecal(newPart, decal.Face)
 					AddDecal(newPart, decal.Texture:match("%d+$"), decal.Face)
 				end
 			end
-		end
+
 
 		SetCollision(newPart, basepart.CanCollide)
 		SetAnchor(basepart.Anchored, newPart)
@@ -129,5 +130,4 @@ for _, basepart in pairs(obj:GetDescendants()) do
 		end
 	end
 end
-
-DestroyPart(obj)
+obj:Destroy()
