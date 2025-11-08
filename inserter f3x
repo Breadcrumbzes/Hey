@@ -27,47 +27,73 @@ local function CreatePart(cf, parent)
 end
 
 local function Resize(part, size, cf)
+	task.spawn(function()
 	remote:InvokeServer("SyncResize", {{Part = part, CFrame = cf, Size = size}})
+	end)
 end
 
 local function SetCollision(part, boolean)
+	task.spawn(function()
 	remote:InvokeServer("SyncCollision", {{Part = part, CanCollide = boolean}})
+	end)
 end
 
 local function SetAnchor(boolean, part)
+	task.spawn(function()
 	remote:InvokeServer("SyncAnchor", {{Part = part, Anchored = boolean}})
+end)
 end
 
 local function Color(part, color)
+	task.spawn(function()
 	remote:InvokeServer("SyncColor", {{Part = part, Color = color, UnionColoring = false}})
+end)
 end
 
 local function SetTrans(part, trans)
+	task.spawn(function()
 	remote:InvokeServer("SyncMaterial", {{Part = part, Transparency = trans}})
+	end)
 end
 
 local function SpawnDecal(part, face)
+	task.spawn(function()
 	remote:InvokeServer("CreateTextures", {{Part = part, Face = face, TextureType = "Decal"}})
+	end)
 end
 
 local function AddDecal(part, asset, face)
+	task.spawn(function()
 	remote:InvokeServer("SyncTexture", {{Part = part, Face = face, TextureType = "Decal", Texture = "rbxassetid://"..asset}})
+	end)
+	
 end
 
 local function SetName(part, name)
+	task.spawn(function()
 	remote:InvokeServer("SetName", {part}, name)
+	end)
+	
 end
 
 local function AddMesh(part)
+	task.spawn(function()
 	remote:InvokeServer("CreateMeshes", {{Part = part}})
+	end)
+	
 end
 
 local function SetMesh(part, meshId)
+	task.spawn(function()
 	remote:InvokeServer("SyncMesh", {{Part = part, MeshId = meshId}})
+	end)
+	
 end
 
 local function MeshResize(part, scale)
+	task.spawn(function()
 	remote:InvokeServer("SyncMesh", {{Part = part, Scale = scale}})
+	end)
 end
 
 local function DestroyPart(part)
@@ -106,6 +132,7 @@ for _, basepart in pairs(obj:GetDescendants()) do
 					remote:InvokeServer("SyncMesh", {{Part = newPart, Scale = mesh.Scale}})
 				end
 			end
+			basepart:Destroy()
 		end)
 	end
 end
