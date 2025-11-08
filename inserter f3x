@@ -98,16 +98,18 @@ wait(0.1)
 
 for _, basepart in pairs(obj:GetDescendants()) do
 	if basepart:IsA("BasePart") then
-		local newPart
-		newPart = CreatePart(basepart.CFrame, workspace)
-		
-
+		task.spawn(function()
+	
+		local newPart = CreatePart(basepart.CFrame, workspace)
 			for _, decal in pairs(basepart:GetChildren()) do
 				if decal:IsA("Decal") then
 					SpawnDecal(newPart, decal.Face)
-					AddDecal(newPart, decal.Texture:match("%d+$"), decal.Face)
+					AddDecal(newPart, decal.Texture, decal.Face)
 				end
 			end
+repeat 
+	wait()
+until newPart 
 
 
 		SetCollision(newPart, basepart.CanCollide)
@@ -120,14 +122,15 @@ for _, basepart in pairs(obj:GetDescendants()) do
 		for _, mesh in pairs(basepart:GetChildren()) do
 			if mesh:IsA("SpecialMesh") then
 				AddMesh(newPart)
-				if mesh.MeshId ~= "" then
+
 					SetMesh(newPart, mesh.MeshId)
-				end
-				if mesh.Scale then
+
 					MeshResize(newPart, mesh.Scale)
-				end
+
 			end
 		end
+		end)
 	end
 end
-obj:Destroy()
+
+DestroyPart(obj)
