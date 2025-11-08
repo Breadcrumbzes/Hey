@@ -1,0 +1,131 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local tool
+
+local function updatef3x()
+	for _, v in pairs(player:GetDescendants()) do
+		if v.Name == "SyncAPI" and v:FindFirstChild("ServerEndpoint") then
+			tool = v.Parent
+			break
+		end
+	end
+	if not tool then
+		for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+			if v.Name == "SyncAPI" and v:FindFirstChild("ServerEndpoint") then
+				tool = v.Parent
+				break
+			end
+		end
+	end
+end
+updatef3x()
+if not tool then return end
+
+local remote = tool:WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
+
+local function InvokeServerAsync(args)
+	task.spawn(function()
+		local success, result = pcall(function()
+			return remote:InvokeServer(unpack(args))
+		end)
+		if not success then
+			warn("Remote call failed:", result)
+		end
+	end)
+end
+
+local function CreatePart(cf, parent)
+	InvokeServerAsync({"CreatePart", "Normal", cf, parent})
+end
+
+local function Resize(part, size, cf)
+	InvokeServerAsync({"SyncResize", {{Part = part, CFrame = cf, Size = size}}})
+end
+
+local function SetCollision(part, boolean)
+	InvokeServerAsync({"SyncCollision", {{Part = part, CanCollide = boolean}}})
+end
+
+local function SetAnchor(boolean, part)
+	InvokeServerAsync({"SyncAnchor", {{Part = part, Anchored = boolean}}})
+end
+
+local function Color(part, color)
+	InvokeServerAsync({"SyncColor", {{Part = part, Color = color, UnionColoring = false}}})
+end
+
+local function SetTrans(part, trans)
+	InvokeServerAsync({"SyncMaterial", {{Part = part, Transparency = trans}}})
+end
+
+local function SpawnDecal(part, face)
+	InvokeServerAsync({"CreateTextures", {{Part = part, Face = face, TextureType = "Decal"}}})
+end
+
+local function AddDecal(part, asset, face)
+	InvokeServerAsync({"SyncTexture", {{Part = part, Face = face, TextureType = "Decal", Texture = "rbxassetid://"..asset}}})
+end
+
+local function SetName(part, name)
+	InvokeServerAsync({"SetName", {part}, name})
+end
+
+local function AddMesh(part)
+	InvokeServerAsync({"CreateMeshes", {{Part = part}}})
+end
+
+local function SetMesh(part, meshId)
+	InvokeServerAsync({"SyncMesh", {{Part = part, MeshId = meshId}}})
+end
+
+local function MeshResize(part, scale)
+	InvokeServerAsync({"SyncMesh", {{Part = part, Scale = scale}}})
+end
+
+local function DestroyPart(part)
+	InvokeServerAsync({"Remove", {part}})
+end
+
+local obj = game:GetObjects("rbxassetid://8192195260")[1]
+obj.Parent = workspace
+obj:SetPrimaryPartCFrame(CFrame.new(0,100,0))
+wait(0.1)
+
+for _, basepart in pairs(obj:GetDescendants()) do
+	if basepart:IsA("BasePart") then
+		CreatePart(basepart.CFrame, workspace)
+		local newPart = basepart
+
+		if basepart.Decal then
+			for _, decal in pairs(basepart:GetChildren()) do
+				if decal:IsA("Decal") then
+					SpawnDecal(newPart, decal.Face)
+					AddDecal(newPart, decal.Texture:match("%d+$"), decal.Face)
+				end
+			end
+		end
+
+		SetCollision(newPart, basepart.CanCollide)
+		SetAnchor(basepart.Anchored, newPart)
+		Color(newPart, basepart.Color)
+		SetTrans(newPart, basepart.Transparency)
+		Resize(newPart, basepart.Size, basepart.CFrame)
+		SetName(newPart, basepart.Name)
+
+		for _, mesh in pairs(basepart:GetChildren()) do
+			if mesh:IsA("SpecialMesh") then
+				AddMesh(newPart)
+				if mesh.MeshId ~= "" then
+					SetMesh(newPart, mesh.MeshId)
+				end
+				if mesh.Scale then
+					MeshResize(newPart, mesh.Scale)
+				end
+			end
+		end
+	end
+end
+
+DestroyPart(obj)
