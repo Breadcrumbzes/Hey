@@ -215,7 +215,7 @@ workspace.DescendantAdded:Connect(function(v)
 			kill(v)
 		end)
 	elseif v:IsA("BasePart") then
-		if v.Name == "KillBrick" or v.Name == "Lava" then
+		if v.Name == "KillBrick" or v.Name == "Lava" or v.Name == "Killbrick" or v.Name == "lava" then
 			if table.find(myparts, v) then
 			healthreact(v)
 			end
