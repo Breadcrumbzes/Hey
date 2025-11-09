@@ -33,6 +33,9 @@ end
 local function SetTransparency(part, trans)
 	SafeInvoke("SyncMaterial", {{Part = part, Transparency = trans}})
 end
+local function ExtractImageFromDecal(assetId)
+	SafeInvoke("ExtractImageFromDecal", assetId)
+end
 
 local function CreateDecal(part, face)
 	SafeInvoke("CreateTextures", {{Part = part, Face = face, TextureType = "Decal"}})
