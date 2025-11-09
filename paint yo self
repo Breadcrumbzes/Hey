@@ -33,6 +33,7 @@ end
 local function SetTransparency(part, trans)
 	SafeInvoke("SyncMaterial", {{Part = part, Transparency = trans}})
 end
+
 local function ExtractImageFromDecal(assetId)
 	SafeInvoke("ExtractImageFromDecal", assetId)
 end
@@ -57,6 +58,16 @@ end
 local function CreateMesh(part)
 	SafeInvoke("CreateMeshes", {{Part = part}})
 end
+
+local function SyncMesh(part, meshtype, meshId, scale)
+	SafeInvoke("SyncMesh", {{
+		Part = part,
+        MeshType = meshtype,
+		MeshId = meshId,
+        Scale = scale   
+	}})
+end
+
 
 local function SyncMeshId(part, id)
 	SafeInvoke("SyncMesh", {{Part = part, MeshId = id}})
