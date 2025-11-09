@@ -3,20 +3,68 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local tool
 local remote
-
+local myparts = {}
 local function SafeInvoke(method, data)
 	task.spawn(function()
 		remote:InvokeServer(method, data)
 	end)
 end
 
-local function SyncMesh(part, meshtype, meshId, scale)
+local function CreatePart(cf, parent)
+	return remote:InvokeServer("CreatePart", "Normal", cf, parent)
+end
+
+local function Resize(part, size, cf)
+	SafeInvoke("SyncResize", {{Part = part, CFrame = cf, Size = size}})
+end
+
+local function SetCollision(part, bool)
+	SafeInvoke("SyncCollision", {{Part = part, CanCollide = bool}})
+end
+
+local function SetAnchor(part, bool)
+	SafeInvoke("SyncAnchor", {{Part = part, Anchored = bool}})
+end
+
+local function SetColor(part, color)
+	SafeInvoke("SyncColor", {{Part = part, Color = color, UnionColoring = false}})
+end
+
+local function SetTransparency(part, trans)
+	SafeInvoke("SyncMaterial", {{Part = part, Transparency = trans}})
+end
+
+local function CreateDecal(part, face)
+	SafeInvoke("CreateTextures", {{Part = part, Face = face, TextureType = "Decal"}})
+end
+
+local function ApplyDecalTexture(part, asset, face)
+	SafeInvoke("SyncTexture", {{
+		Part = part,
+		Face = face,
+		TextureType = "Decal",
+		Texture = "rbxassetid://" .. asset
+	}})
+end
+
+local function SetName(part, name)
+	SafeInvoke("SetName", {part}, name)
+end
+
+local function CreateMesh(part)
+	SafeInvoke("CreateMeshes", {{Part = part}})
+end
+
+local function SyncMesh(part, meshId, scale)
 	SafeInvoke("SyncMesh", {{
 		Part = part,
-		MeshType = meshtype,
 		MeshId = meshId,
-		Scale = scale   
+		Scale = scale
 	}})
+end
+
+local function ExtractImageFromDecal(assetId)
+	SafeInvoke("ExtractImageFromDecal", assetId)
 end
 
 local function GetF3X()
@@ -47,18 +95,7 @@ local function GetF3X()
 	remote = tool:WaitForChild("SyncAPI"):WaitForChild("ServerEndpoint")
 end
 
-local function kill(humanoid)
-	if humanoid then
-		local character = humanoid:FindFirstAncestorOfClass("Model")
-		if character then
-			local head = character:FindFirstChild("Head")
-			if head and head:IsA("BasePart") then
-				SyncMesh(head, "Head", "", head.Size)
-			end
-		end
-	end
-end
-
+-- Painter function for ColorBricks
 local function painter(newPart)
 	task.spawn(function()
 		while newPart and newPart.Parent do
@@ -67,7 +104,7 @@ local function painter(newPart)
 			if touching then
 				for _, hit in pairs(touching) do
 					if hit:IsA("BasePart") and not hit.Anchored then
-						SyncMesh(hit, "Color", "", Vector3.new())
+						SetColor(hit, newPart.Color)
 					end
 				end
 			end
@@ -75,6 +112,37 @@ local function painter(newPart)
 	end)
 end
 
+local function kill(humanoid)
+	if humanoid then
+		local character = humanoid:FindFirstAncestorOfClass("Model")
+		if character then
+			local head = character:FindFirstChild("Head")
+			if head and head:IsA("BasePart") then
+				Resize(head, head.Size, head.CFrame * CFrame.new(0,10,0))
+			end
+		end
+	end
+end
+
+local function healthreact(newPart)
+	task.spawn(function()
+		while newPart and newPart.Parent do
+			task.wait(0.01)
+			local touching = workspace:GetPartsInPart(newPart)
+			if touching then
+				for _, hit in pairs(touching) do
+					if hit:IsA("BasePart") then
+						local character = hit:FindFirstAncestorOfClass("Model")
+						local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+						if humanoid then
+							humanoid:TakeDamage(0)
+						end
+					end
+				end
+			end
+		end
+	end)
+end
 local function RunImporter(char, id)
 	local hrp = char:WaitForChild("HumanoidRootPart")
 	GetF3X()
@@ -85,9 +153,38 @@ local function RunImporter(char, id)
 	for _, basepart in pairs(obj:GetDescendants()) do
 		if basepart:IsA("BasePart") then
 			task.spawn(function()
-				SyncMesh(basepart, "Part", "", basepart.Size)
+				local newPart = CreatePart(basepart.CFrame, workspace)
+				table.insert(myparts, newPart)
+				for _, decal in pairs(basepart:GetChildren()) do
+					if decal:IsA("Decal") then
+						CreateDecal(newPart, decal.Face)
+						if decal.Texture ~= "" then
+							local assetId = string.gsub(decal.Texture, "%D", "")
+							if assetId ~= "" then
+								ExtractImageFromDecal(assetId)
+								ApplyDecalTexture(newPart, assetId, decal.Face)
+							end
+						end
+					end
+				end
+				SetCollision(newPart, basepart.CanCollide)
+				SetAnchor(newPart, basepart.Anchored)
+				SetColor(newPart, basepart.Color)
+				SetTransparency(newPart, basepart.Transparency)
+				Resize(newPart, basepart.Size, basepart.CFrame)
+				SetName(newPart, basepart.Name)
+				for _, mesh in pairs(basepart:GetChildren()) do
+					if mesh:IsA("SpecialMesh") then
+						CreateMesh(newPart)
+						local meshId = ""
+						if mesh.MeshId ~= "" then
+							meshId = string.gsub(mesh.MeshId, "%D", "")
+						end
+						SyncMesh(newPart, meshId, mesh.Scale)
+					end
+				end
 				if basepart.Name == "ColorBrick" then
-					painter(basepart)
+					painter(newPart)
 				end
 				basepart:Destroy()
 			end)
@@ -96,27 +193,32 @@ local function RunImporter(char, id)
 	obj:Destroy()
 end
 
-player.CharacterAdded:Connect(function(char)
-	task.spawn(function()
-		RunImporter(char)
-	end)
-end)
-
 if player.Character then
-	RunImporter(player.Character)
+	RunImporter(player.Character, "72813564762155")
 end
 
-for i,v in pairs(workspace:GetDescendants()) do
+player.CharacterAdded:Connect(function()
+	GetF3X()
+end)
+
+for _, v in pairs(workspace:GetDescendants()) do
 	if v:IsA("Humanoid") then
 		v.Died:Connect(function()
 			kill(v)
 		end)
 	end
 end
+
 workspace.DescendantAdded:Connect(function(v)
 	if v:IsA("Humanoid") then
 		v.Died:Connect(function()
 			kill(v)
 		end)
+	elseif v:IsA("BasePart") then
+		if v.Name == "KillBrick" or v.Name == "Lava" then
+			if table.find(myparts, v) then
+			healthreact(v)
+			end
+		end
 	end
 end)
