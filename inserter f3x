@@ -102,8 +102,8 @@ end
 
 local obj = game:GetObjects("rbxassetid://8192195260")[1]
 obj.Parent = workspace
-obj:PivotTo(CFrame.new(0,100,0))
-
+obj:PivotTo(CFrame.new(0,-20,0))
+obj:ScaleTo(10)
 wait(0.1)
 
 for _, basepart in pairs(obj:GetDescendants()) do
