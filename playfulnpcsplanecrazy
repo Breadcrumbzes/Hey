@@ -1,0 +1,223 @@
+-- you must create some parts that are enough to make atleast one character to make the script work, having the colors seen below, but the max amount of characters is infinite.
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+if not player then return end
+
+local aircraftName = player.Name .. " Aircraft"
+local aircraft = workspace:FindFirstChild(aircraftName, true)
+if not aircraft then return end
+
+local torsoParts = {}
+local headParts = {}
+local armParts = {}
+local legParts = {}
+-- colors
+for _, v in ipairs(aircraft:GetDescendants()) do
+	if v:IsA("BasePart") then
+		local c = v.BrickColor.Name:lower()
+		if c == "cyan" then
+			table.insert(torsoParts, v)
+		elseif c == "new yeller" then
+			table.insert(armParts, v)
+		elseif c == "deep orange" then
+			table.insert(headParts, v)
+		elseif v.Color == Color3.fromRGB(0,255,0) then
+			table.insert(legParts, v)
+		elseif v.Color == Color3.fromRGB(0,0,0) then
+			v.CanCollide = false
+			v.Massless = true
+		end
+	end
+end
+
+local function safeRemove(tbl, idx)
+	if not tbl or idx < 1 or idx > #tbl then return nil end
+	return table.remove(tbl, idx)
+end
+
+local function getPlayerPrimaryCFrame(plr)
+	if not plr or not plr.Character then return nil end
+	local root = plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("Torso")
+	if root then
+		return root.CFrame
+	end
+end
+
+local function findNearestPlayer(pos, maxDist)
+	local best, bestDist = nil, maxDist or math.huge
+	for _, pl in ipairs(Players:GetPlayers()) do
+		if pl ~= player and pl.Character then
+			local root = pl.Character:FindFirstChild("HumanoidRootPart") or pl.Character:FindFirstChild("Torso")
+			if root then
+				local d = (root.Position - pos).Magnitude
+				if d < bestDist then
+					bestDist = d
+					best = pl
+				end
+			end
+		end
+	end
+	return best, bestDist
+end
+
+local function attachAlign(partToMove, targetPart)
+	partToMove.CanCollide = false
+	partToMove.Massless = true
+	partToMove.CFrame = targetPart.CFrame
+	local a0 = Instance.new("Attachment")
+	a0.Parent = partToMove
+	local a1 = Instance.new("Attachment")
+	a1.Parent = targetPart
+
+	local ap = Instance.new("AlignPosition")
+	ap.Attachment0 = a0
+	ap.Attachment1 = a1
+	ap.MaxForce = 1e6
+	ap.MaxVelocity = math.huge
+	ap.Responsiveness = 200
+	ap.RigidityEnabled = true
+	ap.Parent = partToMove
+
+	local ao = Instance.new("AlignOrientation")
+	ao.Attachment0 = a0
+	ao.Attachment1 = a1
+	ao.MaxTorque = 1e6
+	ao.MaxAngularVelocity = math.huge
+	ao.Responsiveness = 200
+	ao.Parent = partToMove
+end
+
+local function setupAnimation(humanoid, hrp)
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		animator = Instance.new("Animator")
+		animator.Parent = humanoid
+	end
+
+	local idle = Instance.new("Animation")
+	idle.AnimationId = "rbxassetid://180435571"
+	local walk = Instance.new("Animation")
+	walk.AnimationId = "rbxassetid://180426354"
+	local jump = Instance.new("Animation")
+	jump.AnimationId = "rbxassetid://125750702"
+
+	local idleTrack = animator:LoadAnimation(idle)
+	local walkTrack = animator:LoadAnimation(walk)
+	local jumpTrack = animator:LoadAnimation(jump)
+
+	idleTrack.Priority = Enum.AnimationPriority.Idle
+	walkTrack.Priority = Enum.AnimationPriority.Movement
+	jumpTrack.Priority = Enum.AnimationPriority.Action
+
+	local current = nil
+
+	task.spawn(function()
+		while humanoid.Parent do
+			local vel = hrp.Velocity
+			local speed = Vector3.new(vel.X,0,vel.Z).Magnitude
+			local jumping = vel.Y > 2
+
+			if jumping then
+				if current ~= jumpTrack then
+					if current then current:Stop() end
+					jumpTrack:Play()
+					current = jumpTrack
+				end
+			elseif speed > 1 then
+				if current ~= walkTrack then
+					if current then current:Stop() end
+					walkTrack:Play()
+					current = walkTrack
+				end
+			else
+				if current ~= idleTrack then
+					if current then current:Stop() end
+					idleTrack:Play()
+					current = idleTrack
+				end
+			end
+			task.wait(0.1)
+		end
+	end)
+end
+
+while #armParts >= 2 and #legParts >= 2 and #headParts >= 1 and #torsoParts >= 1 do
+	local torso = safeRemove(torsoParts,1)
+	local head = safeRemove(headParts,1)
+	local arms = {safeRemove(armParts,1),safeRemove(armParts,1)}
+	local legs = {safeRemove(legParts,1),safeRemove(legParts,1)}
+	if not torso or not head then break end
+	for _, p in ipairs(arms) do if not p then return end end
+	for _, p in ipairs(legs) do if not p then return end end
+
+	local desc = Instance.new("HumanoidDescription")
+	local model = Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R6)
+	model.Parent = aircraft
+
+	local root = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Torso")
+	if root then
+		model.PrimaryPart = root
+		model:SetPrimaryPartCFrame((getPlayerPrimaryCFrame(player) or CFrame.new())*CFrame.new(math.random(-10,10),0,math.random(-10,10)))
+	end
+
+	for _, p in ipairs(model:GetDescendants()) do
+		if p:IsA("BasePart") then
+			p.Transparency = 1
+		end
+	end
+
+	local map = {
+		Head = head,
+		Torso = torso,
+		["Right Arm"] = arms[1],
+		["Left Arm"] = arms[2],
+		["Right Leg"] = legs[1],
+		["Left Leg"] = legs[2]
+	}
+
+	for name, part in pairs(map) do
+		if model:FindFirstChild(name) then
+			attachAlign(part, model[name])
+		end
+	end
+
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	if humanoid and root then
+		humanoid.DisplayName = ""
+		humanoid.NameDisplayDistance = 0
+		humanoid.WalkSpeed = 32
+		setupAnimation(humanoid, root)
+
+		task.spawn(function()
+			local jumpTimer = 0
+			local orbitAngle = 0
+			while model.Parent do
+				local target, dist = findNearestPlayer(root.Position, 1000)
+				if target and target.Character then
+					local tr = target.Character:FindFirstChild("HumanoidRootPart") or target.Character:FindFirstChild("Torso")
+					if tr then
+						local toTarget = tr.Position - root.Position
+						local horizontalDist = Vector3.new(toTarget.X,0,toTarget.Z).Magnitude
+						if horizontalDist > 15 then
+							humanoid:MoveTo(tr.Position)
+						else
+							orbitAngle = orbitAngle + math.rad(10)
+							local radius = 5
+							local offset = Vector3.new(math.cos(orbitAngle)*radius, 0, math.sin(orbitAngle)*radius)
+							local newPos = tr.Position + offset
+							humanoid:MoveTo(newPos)
+
+							jumpTimer = jumpTimer + RunService.Heartbeat:Wait()
+							if jumpTimer >= 1 then
+								humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+								jumpTimer = 0
+							end
+						end
+					end
+				end
+				RunService.Heartbeat:Wait()
+			end
+		end)
+	end
+end
