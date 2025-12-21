@@ -1,7 +1,6 @@
 local Players = game:GetService("Players")
 local TextChatService = game:GetService("TextChatService")
 local HttpService = game:GetService("HttpService")
-
 local allowed = {
 	["project_2kit"] = true,
 	["bakonbits54"] = true,
