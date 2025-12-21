@@ -19,7 +19,7 @@ local function gonerai(CHARACTER)
 	local MRANDOM = math.random
 	local FLOOR = math.floor
 
-	local scriptRef = script
+	local scriptRef = CHARACTER:FindFirstChildOfClass("Script")
 
 	-- Local character references
 	local GYRO = nil
