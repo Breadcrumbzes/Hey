@@ -2614,6 +2614,7 @@ for i,v in pairs(mas:GetChildren()) do
 	pcall(function() v:MakeJoints() end)
 end
 mas:Destroy()
+model0:PivotTo(game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,-30))
 for i,v in pairs(cors) do
 	spawn(function()
 		pcall(v)
