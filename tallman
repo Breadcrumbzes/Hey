@@ -1,0 +1,1562 @@
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local Debris = game:GetService("Debris")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Backpack = LocalPlayer:WaitForChild("Backpack")
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+local function getBT()
+	return Backpack:FindFirstChild("Building Tools") or character:FindFirstChild("Building Tools")
+end
+
+local move = {}
+local scale = {}
+local delete = {}
+local meshSync = {}
+local blacklisto = {}
+
+local function cleanArray(tbl)
+	for i = #tbl, 1, -1 do
+		if tbl[i] == nil then
+			table.remove(tbl, i)
+		end
+	end
+end
+
+local function cleanMeshTable(t)
+	for part, _ in pairs(t) do
+		if not part or not part.Parent then
+			t[part] = nil
+		end
+	end
+end
+
+local function syncpos(model, freeze)
+	for _, v in pairs(model:GetDescendants()) do
+		if v:IsA("Part") or v:IsA("MeshPart") then
+			table.insert(move, {
+				Part = v,
+				CFrame = v.CFrame
+			})
+			coroutine.wrap(function()
+				local bt = getBT()
+				if not bt then return end
+				local ok, _ = pcall(function()
+					bt.SyncAPI.ServerEndpoint:InvokeServer("SyncAnchor", { { Part = v, Anchored = freeze } })
+				end)
+				if ok then
+					while v and v.Parent do
+						task.wait()
+						v.Anchored = false
+					end
+				end
+			end)()
+		end
+	end
+end
+
+local function updateMeshSync(part, props)
+	if not part or not part.Parent then return end
+	meshSync[part] = meshSync[part] or {}
+	for k, v in pairs(props) do
+		meshSync[part][k] = v
+	end
+	meshSync[part].Part = part
+end
+
+local function replicate(part, van, refit)
+	coroutine.wrap(function()
+		local shape = "Normal"
+		if part:IsA("Part") then
+			local shapeType = part.Shape
+			if shapeType == Enum.PartType.Ball then shape = "Ball"
+			elseif shapeType == Enum.PartType.Block then shape = "Normal"
+			elseif shapeType == Enum.PartType.Cylinder then shape = "Cylinder"
+			elseif shapeType == Enum.PartType.Wedge then shape = "Wedge" end
+		elseif part:IsA("TrussPart") then
+			shape = "Truss"
+		elseif part:IsA("SpawnLocation") then
+			shape = "Spawn"
+		elseif part:IsA("Seat") then
+			shape = "Seat"
+		elseif part:IsA("MeshPart") then
+			shape = "Normal"
+			if not table.find(blacklisto, part) then
+				local special = Instance.new("SpecialMesh", part)
+				special.MeshType = Enum.MeshType.FileMesh
+				special.MeshId = part.MeshId
+				special.TextureId = part.TextureId
+				special.Scale = part.Size
+			end
+		end
+
+		local partRef = {}
+		coroutine.wrap(function()
+			local bt = getBT()
+			if not bt then return end
+			partRef.newPart = bt.SyncAPI.ServerEndpoint:InvokeServer("CreatePart", shape, CFrame.new(0, 10000, 0), workspace)
+		end)()
+
+		local timeout = 5
+		local bad = false
+		while not partRef.newPart and timeout > 0 do
+			task.wait(0.1)
+			timeout = timeout - 0.1
+		end
+		local newPart = partRef.newPart
+		if not newPart then return end
+
+		part.AncestryChanged:Connect(function(_, parent)
+			if not parent then
+				bad = true
+				table.insert(delete, newPart)
+			end
+		end)
+
+		newPart.AncestryChanged:Connect(function(_, parent)
+			if part and refit and not parent then
+				if bad then return end
+				replicate(part, true, true)
+			end
+		end)
+
+		newPart.CanCollide = false
+
+		coroutine.wrap(function()
+			local bt = getBT()
+			if not bt then return end
+			pcall(function()
+				bt.SyncAPI.ServerEndpoint:InvokeServer("SyncResize", { { Part = newPart, CFrame = part.CFrame, Size = part.Size } })
+			end)
+			pcall(function()
+				bt.SyncAPI.ServerEndpoint:InvokeServer("SetLocked", { newPart }, true)
+			end)
+			while part and newPart and part.Parent and newPart.Parent do
+				pcall(function()
+					bt.SyncAPI.ServerEndpoint:InvokeServer("SetName", { newPart }, part.Name)
+				end)
+				pcall(function()
+					bt.SyncAPI.ServerEndpoint:InvokeServer("SyncMaterial", { { Part = newPart, Transparency = part.Transparency } })
+				end)
+				task.wait(3)
+			end
+		end)()
+
+		coroutine.wrap(function()
+			while part and newPart and part.Parent and newPart.Parent do
+				local bt = getBT()
+				if bt then
+					pcall(function()
+						bt.SyncAPI.ServerEndpoint:InvokeServer("SyncMaterial", { { Part = newPart, Material = part.Material } })
+					end)
+					pcall(function()
+						bt.SyncAPI.ServerEndpoint:InvokeServer("SyncColor", { { Part = newPart, UnionColoring = true, Color = part.Color } })
+					end)
+				end
+				task.wait()
+			end
+		end)()
+
+		for _, decal in ipairs(part:GetChildren()) do
+			if decal:IsA("Decal") then
+				coroutine.wrap(function()
+					local bt = getBT()
+					if not bt then return end
+					pcall(function()
+						bt.SyncAPI.ServerEndpoint:InvokeServer("CreateTextures", { { Part = newPart, Face = decal.Face, TextureType = "Decal" } })
+						bt.SyncAPI.ServerEndpoint:InvokeServer("SyncTexture", { { Part = newPart, Face = decal.Face, TextureType = "Decal", Texture = decal.Texture } })
+					end)
+					while part and newPart and part.Parent and newPart.Parent do
+						pcall(function()
+							bt.SyncAPI.ServerEndpoint:InvokeServer("SyncTexture", { { Part = newPart, Face = decal.Face, TextureType = "Decal", Texture = decal.Texture } })
+						end)
+						task.wait(2)
+					end
+				end)()
+			end
+		end
+
+		local mesh = part:FindFirstChildOfClass("SpecialMesh")
+		if mesh then
+			coroutine.wrap(function()
+				local bt = getBT()
+				if bt then
+					pcall(function()
+						bt.SyncAPI.ServerEndpoint:InvokeServer("CreateMeshes", { { Part = newPart } })
+					end)
+				end
+			end)()
+
+			local props = {}
+			if mesh.MeshType then props.MeshType = mesh.MeshType end
+			if mesh.Scale then props.Scale = mesh.Scale end
+			if mesh.TextureId and mesh.TextureId ~= "" then props.TextureId = mesh.TextureId end
+			if mesh.MeshId and mesh.MeshId ~= "" then props.MeshId = mesh.MeshId end
+			updateMeshSync(newPart, props)
+		end
+
+		if van then
+			coroutine.wrap(function()
+				while part and newPart and part.Parent and newPart.Parent do
+					task.wait()
+					table.insert(scale, { Part = newPart, CFrame = part.CFrame, Size = part.Size })
+				end
+			end)()
+		end
+	end)()
+end
+
+task.spawn(function()
+	while true do
+		task.wait()
+		task.spawn(function()
+			cleanArray(scale)
+			local bt = getBT()
+			if bt and #scale > 0 then
+				pcall(function()
+					bt.SyncAPI.ServerEndpoint:InvokeServer("SyncResize", scale)
+				end)
+			end
+			scale = {}
+		end)
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait()
+		task.spawn(function()
+			cleanArray(move)
+			local bt = getBT()
+			if bt and #move > 0 then
+				pcall(function()
+					bt.SyncAPI.ServerEndpoint:InvokeServer("SyncMove", move)
+				end)
+			end
+			move = {}
+		end)
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait()
+		task.spawn(function()
+			cleanArray(delete)
+			local bt = getBT()
+			if bt and #delete > 0 then
+				pcall(function()
+					bt.SyncAPI.ServerEndpoint:InvokeServer("Remove", delete)
+				end)
+			end
+			local deleteremains = {}
+			for i,v in pairs(delete) do
+				if v and v.Parent then
+					table.insert(deleteremains, v)
+				end
+			end
+			delete = {}
+			for i,v in pairs(deleteremains) do
+				table.insert(delete, v)
+			end
+		end)
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait()
+		task.spawn(function()
+			cleanMeshTable(meshSync)
+			local entries = {}
+			for _, props in pairs(meshSync) do
+				local entry = {}
+				for k, v in pairs(props) do
+					if k == "Part" then
+						entry.Part = v
+					elseif k == "Scale" then
+						entry.Scale = v
+					elseif k == "Offset" then
+						entry.Offset = v
+					elseif k == "MeshType" then
+						entry.MeshType = v
+					elseif k == "MeshId" then
+						entry.MeshId = v
+					elseif k == "TextureId" then
+						entry.TextureId = v
+					elseif k == "VertexColor" then
+						entry.VertexColor = v
+					else
+						entry[k] = v
+					end
+				end
+				if entry.Part and entry.Part.Parent then
+					table.insert(entries, entry)
+				end
+			end
+			if #entries > 0 then
+				local bt = getBT()
+				if bt then
+					pcall(function()
+						bt.SyncAPI.ServerEndpoint:InvokeServer("SyncMesh", entries)
+					end)
+				end
+			end
+		end)
+	end
+end)
+getBT().Parent = Backpack
+table.insert(delete, character)
+task.wait(0.5)
+local already =  ReplicatedStorage:FindFirstChild("TallManAssets")
+if already then
+	already:Destroy()
+end
+local stuff = game:GetObjects("rbxassetid://72924256723577")[1]
+stuff.Parent = ReplicatedStorage
+local tallman = stuff:FindFirstChild("TallMan"):Clone()
+local character = tallman
+local humanoid = character.Humanoid
+tallman.Parent = workspace
+tallman:PivotTo(LocalPlayer.Character.HumanoidRootPart.CFrame)
+LocalPlayer.Character = tallman
+task.spawn(function()
+	local Players = game:GetService("Players")
+	local RunService = game:GetService("RunService")
+	local player = Players.LocalPlayer
+	local camera = workspace.CurrentCamera
+	wait(0.5)
+	while tallman and tallman.Humanoid.Health > 0 do
+		wait(0.01)
+		local char = character
+		local humanoid = char:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			camera.CameraSubject = humanoid
+			humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+			camera.CameraType = Enum.CameraType.Custom
+			player.CameraMode = Enum.CameraMode.Classic
+			player.CameraMaxZoomDistance = math.huge
+		end
+	end
+end)
+humanoid.Died:Connect(function()
+	Debris(character, 5)
+end)
+
+local animFolder = character.AnimSaves
+local idleAnimData = animFolder:WaitForChild("Idle")
+local walkAnimData = animFolder:WaitForChild("Walk")
+local makevanishAnimData = animFolder:WaitForChild("MakeVanish")
+local AllowIdleWalk = true
+local SignalClass
+do
+	local freeRunnerThread = nil
+	local function acquireRunnerThreadAndCallEventHandler(fn, ...)
+		local acquiredRunnerThread = freeRunnerThread
+		freeRunnerThread = nil
+		fn(...)
+		freeRunnerThread = acquiredRunnerThread
+	end
+	local function runEventHandlerInFreeThread(...)
+		acquireRunnerThreadAndCallEventHandler(...)
+		while true do
+			acquireRunnerThreadAndCallEventHandler(coroutine.yield())
+		end
+	end
+	local Connection = {}
+	Connection.__index = Connection
+	function Connection:Disconnect()
+		if not self.Connected then
+			return
+		end
+		self.Connected = false
+		if self._signal._handlerListHead == self then
+			self._signal._handlerListHead = self._next
+		else
+			local prev = self._signal._handlerListHead
+			while prev and prev._next ~= self do
+				prev = prev._next
+			end
+			if prev then
+				prev._next = self._next
+			end
+		end
+	end
+	Connection.Destroy = Connection.Disconnect
+	setmetatable(Connection, {
+		__index = function(_tb, key)
+			error(("Attempt to get Connection::%s (not a valid member)"):format(tostring(key)), 2)
+		end,
+		__newindex = function(_tb, key, _value)
+			error(("Attempt to set Connection::%s (not a valid member)"):format(tostring(key)), 2)
+		end,
+	})
+	local Signal = {}
+	Signal.__index = Signal
+	function Signal.new()
+		local self = setmetatable({
+			_handlerListHead = false,
+			_proxyHandler = nil,
+			_yieldedThreads = nil,
+		}, Signal)
+		return self
+	end
+	function Signal.Wrap(rbxScriptSignal)
+		assert(
+			typeof(rbxScriptSignal) == "RBXScriptSignal",
+			"Argument #1 to Signal.Wrap must be a RBXScriptSignal; got " .. typeof(rbxScriptSignal)
+		)
+		local signal = Signal.new()
+		signal._proxyHandler = rbxScriptSignal:Connect(function(...)
+			signal:Fire(...)
+		end)
+		return signal
+	end
+	function Signal.Is(obj)
+		return type(obj) == "table" and getmetatable(obj) == Signal
+	end
+	function Signal:Connect(fn)
+		local connection = setmetatable({
+			Connected = true,
+			_signal = self,
+			_fn = fn,
+			_next = false,
+		}, Connection)
+		if self._handlerListHead then
+			connection._next = self._handlerListHead
+			self._handlerListHead = connection
+		else
+			self._handlerListHead = connection
+		end
+		return connection
+	end
+	function Signal:ConnectOnce(fn)
+		return self:Once(fn)
+	end
+	function Signal:Once(fn)
+		local connection
+		local done = false
+		connection = self:Connect(function(...)
+			if done then
+				return
+			end
+			done = true
+			connection:Disconnect()
+			fn(...)
+		end)
+		return connection
+	end
+	function Signal:GetConnections()
+		local items = {}
+		local item = self._handlerListHead
+		while item do
+			table.insert(items, item)
+			item = item._next
+		end
+		return items
+	end
+	function Signal:DisconnectAll()
+		local item = self._handlerListHead
+		while item do
+			item.Connected = false
+			item = item._next
+		end
+		self._handlerListHead = false
+		local yieldedThreads = rawget(self, "_yieldedThreads")
+		if yieldedThreads then
+			for thread in pairs(yieldedThreads) do
+				if coroutine.status(thread) == "suspended" then
+					warn(debug.traceback(thread, "signal disconnected; yielded thread cancelled", 2))
+					task.cancel(thread)
+				end
+			end
+			table.clear(self._yieldedThreads)
+		end
+	end
+	function Signal:Fire(...)
+		local item = self._handlerListHead
+		while item do
+			if item.Connected then
+				if not freeRunnerThread then
+					freeRunnerThread = coroutine.create(runEventHandlerInFreeThread)
+				end
+				task.spawn(freeRunnerThread, item._fn, ...)
+			end
+			item = item._next
+		end
+	end
+	function Signal:FireDeferred(...)
+		local item = self._handlerListHead
+		while item do
+			local conn = item
+			task.defer(function(...)
+				if conn.Connected then
+					conn._fn(...)
+				end
+			end, ...)
+			item = item._next
+		end
+	end
+	function Signal:Wait()
+		local yieldedThreads = rawget(self, "_yieldedThreads")
+		if not yieldedThreads then
+			yieldedThreads = {}
+			rawset(self, "_yieldedThreads", yieldedThreads)
+		end
+		local thread = coroutine.running()
+		yieldedThreads[thread] = true
+		self:Once(function(...)
+			yieldedThreads[thread] = nil
+			task.spawn(thread, ...)
+		end)
+		return coroutine.yield()
+	end
+	function Signal:Destroy()
+		self:DisconnectAll()
+		local proxyHandler = rawget(self, "_proxyHandler")
+		if proxyHandler then
+			proxyHandler:Disconnect()
+		end
+	end
+	setmetatable(Signal, {
+		__index = function(_tb, key)
+			error(("Attempt to get Signal::%s (not a valid member)"):format(tostring(key)), 2)
+		end,
+		__newindex = function(_tb, key, _value)
+			error(("Attempt to set Signal::%s (not a valid member)"):format(tostring(key)), 2)
+		end,
+	})
+	SignalClass = table.freeze({
+		new = Signal.new,
+		Wrap = Signal.Wrap,
+		Is = Signal.Is,
+	})
+end
+local AnimationTrack
+local twait = task.wait
+local Signal = SignalClass
+local http = HttpService
+local tween = TweenService
+local find = table.find
+local clear = table.clear
+local insert = table.insert
+local min, max = math.min, math.max
+do
+	AnimationTrack = {}
+	AnimationTrack.Rigs = {}
+	AnimationTrack.Speed = 1
+	AnimationTrack.Stall = 0
+	AnimationTrack.Length = 0
+	AnimationTrack.Weight = 0.3
+	AnimationTrack.Looped = false
+	AnimationTrack.RealWeight = 0.3
+	AnimationTrack.lerpFactor = .6
+	AnimationTrack.TimePosition = 0
+	AnimationTrack.IsPlaying = false
+	AnimationTrack.__index = AnimationTrack
+	AnimationTrack.NoDisableTransition = false
+	local function enumExists(type, value)
+		return pcall(function()
+			return Enum[type][value] ~= nil
+		end)
+	end
+	function AnimationTrack.Destroy(self)
+		if not self then
+			return
+		end
+		if self.Connections then
+			for _, v in pairs(self.Connections) do
+				v:Disconnect()
+			end
+			clear(self.Connections)
+		end
+		if self.Binds then
+			for _, v in pairs(self.Binds) do
+				v:Destroy()
+			end
+			clear(self.Binds)
+		end
+		clear(self.Cache)
+		clear(self.Used)
+		self.Stopped:Destroy()
+		self.Stopped = nil
+		local stuff = AnimationTrack.Rigs[self.Rig]
+		if stuff then
+			for i, v in pairs(stuff.Animations) do
+				if v == self then
+					stuff.Animations[i] = nil
+					break
+				end
+			end
+		end
+		clear(self)
+		self = nil
+	end
+	function AnimationTrack.new()
+		local track = setmetatable({}, AnimationTrack)
+		track.Rigs = nil
+		track.Used = {}
+		track.Cache = {}
+		track.Binds = {}
+		track.Connections = {}
+		track.KeyframeMarkers = {}
+		track.Stopped = Signal.new()
+		track.DidLoop = Signal.new()
+		track.Identifier = http:GenerateGUID()
+		return track
+	end
+	function AnimationTrack.GetMarkerReachedSignal(self, marker)
+		if not self.Binds[marker] then
+			self.Binds[marker] = Signal.new()
+		end
+		return self.Binds[marker]
+	end
+	function AnimationTrack.GetKeyframeReachedSignal(self, keyframe)
+		if typeof(keyframe) == "number" then
+			local num = keyframe
+			keyframe = self.Animation[num]
+		end
+		assert(find(self.Animation, keyframe), "Keyframe does not exist!")
+		if not self.Binds[keyframe] then
+			self.Binds[keyframe] = Signal.new()
+		end
+		return self.Binds[keyframe]
+	end
+	function AnimationTrack.AdjustWeight(self, weight)
+		self.RealWeight = weight
+		self.Weight = self.RealWeight
+	end
+	function AnimationTrack.addWeld(self, motor)
+		local weld = motor:FindFirstChild("AWeld")
+		if not weld then
+			weld = Instance.new("Weld")
+			weld.C0 = motor.C0
+			weld.C1 = motor.C1
+			weld.Name = "AWeld"
+			weld.Part0 = motor.Part0
+			weld.Part1 = motor.Part1
+			weld.Parent = motor
+		end
+		weld:SetAttribute("AnitrackerEnabled", true)
+		AnimationTrack.Rigs[self.Rig].Welds[motor.Part1.Name] = weld
+		AnimationTrack.Rigs[self.Rig].Poses[motor.Part1.Name] = CFrame.new()
+	end
+	function AnimationTrack.setRig(self, rig)
+		assert(self.Animation, "Must set Animation before setting Rig!")
+		self.Rig = rig
+		local boner = rig:FindFirstChildWhichIsA("Bone", true)
+		if boner then
+			local init_poses = rig:FindFirstChild("InitialPoses")
+			if init_poses then
+				for _, v in pairs(init_poses:GetChildren()) do
+					if v.Name:sub(#(v.Name) - 7, #(v.Name)) == "_Initial" then
+						repeat
+							local bone = rig:FindFirstChild(v.Name:sub(0, #(v.Name) - 8), true)
+							if not bone then
+								break
+							end
+							bone:SetAttribute("Initial", v.Value)
+						until true
+					end
+				end
+			else
+				for _, v in pairs(rig:GetDescendants()) do
+					if v:IsA("Bone") then
+						v:SetAttribute("Initial", v.CFrame)
+					end
+				end
+			end
+		end
+		local main = AnimationTrack.Rigs[rig]
+		if not main then
+			AnimationTrack.Rigs[rig] = {
+				Poses = {},
+				Welds = {},
+				Animations = {self}
+			}
+			local animate
+			main = AnimationTrack.Rigs[rig]
+			animate = game:GetService("RunService").PostSimulation:Connect(function()
+				if not AnimationTrack.Rigs[rig] then
+					animate:Disconnect()
+				end
+				local allDone = true
+				local usedJoints = {}
+				local main = AnimationTrack.Rigs[rig]
+				for _, v in pairs(main.Animations) do
+					if v.IsPlaying then
+						allDone = false
+						for i in pairs(v.Used) do
+							usedJoints[i] = true
+						end
+					end
+				end
+				for i, v in pairs(main.Welds) do
+					if v:IsA("Bone") then
+						repeat
+							if not v:GetAttribute("Initial") then
+								main.Welds[i] = nil
+								break
+							end
+							if not allDone then
+								v.CFrame = v:GetAttribute("Initial") * main.Poses[i]
+							else
+								v.CFrame = v:GetAttribute("Initial")
+								if main then
+									main.Poses[i] = CFrame.new()
+								end
+							end
+						until true
+					else
+						repeat
+							if not v.Parent then
+								main.Welds[i] = nil
+								break
+							end
+							local offset = main.Poses[i]
+							offset = CFrame.new(offset.Position * rig:GetScale()) * CFrame.Angles(offset:ToEulerAnglesXYZ())
+							if not allDone and usedJoints[i] then
+								v.Enabled = v:GetAttribute("AnitrackerEnabled")
+								v.C0 = v.Parent.C0 * (offset * (v.Parent:GetAttribute("AnitrackerOffset") or CFrame.identity))
+								v.Parent:SetAttribute("AnitrackerTransform", offset)
+							elseif allDone or not usedJoints[i] then
+								if not self.NoDisableTransition then
+									v.C0 = v.C0:Lerp(v.Parent.C0 * v.Parent.Transform, self.lerpFactor)
+									if (v.C0.Position - (v.Parent.C0 * v.Parent.Transform).Position).Magnitude <= .2 then
+										v.Enabled = false
+										if main then
+											main.Poses[i] = CFrame.new()
+										end
+									end
+								else
+									v.Enabled = false
+									if main then
+										main.Poses[i] = v.Parent.Transform
+									end
+								end
+							end
+						until true
+					end
+				end
+			end)
+			local adder
+			adder = rig.DescendantAdded:Connect(function(v)
+				if not AnimationTrack.Rigs[rig] then
+					adder:Disconnect()
+				end
+				if v:IsA("Motor6D") then
+					self:addWeld(v)
+				elseif v:IsA("Bone") then
+					v:SetAttribute("Initial", v.CFrame)
+					main.Welds[v.Name] = v
+					main.Poses[v.Name] = CFrame.new()
+				end
+			end)
+			main.Adder = adder
+			main.Animate = animate
+		else
+			insert(main.Animations, self)
+		end
+		for _, v in pairs(rig:GetDescendants()) do
+			repeat
+				if boner and v:IsA("Bone") and self.Used[v.Name] then
+					main.Welds[v.Name] = v
+					main.Poses[v.Name] = CFrame.new()
+					break
+				end
+				if v:IsA("Motor6D") and self.Used[v.Part1.Name] then
+					self:addWeld(v)
+				end
+			until true
+		end
+		coroutine.wrap(function()
+			repeat
+				twait()
+			until rig.Parent
+			rig.Parent.ChildRemoved:Connect(function(v)
+				if v == rig then
+					AnimationTrack.Rigs[rig] = nil
+					self:Destroy()
+				end
+			end)
+		end)()
+	end
+	function AnimationTrack.getMotor(self, name)
+		if self.Cache[name] then
+			return self.Cache[name]
+		end
+		for _, v in pairs(self.Rig:GetDescendants()) do
+			if v:IsA("Motor6D") and v.Part1.Name == name then
+				self.Cache[name] = v
+				return v
+			end
+		end
+	end
+	function AnimationTrack.setAnimation(self, anim)
+		local length = 0
+		if typeof(anim) == "string" then
+			error("you must provide a table")
+		end
+		self.Animation = anim
+		for i, v in pairs(anim) do
+			if v.tm > length then
+				length = v.tm
+			end
+			for j, w in pairs(v) do
+				repeat
+					if typeof(w) ~= "table" then
+						if typeof(w) == "string" then
+							insert(self.KeyframeMarkers, {
+								Name = j,
+								Value = w,
+								Time = v.tm
+							})
+						end
+						break
+					end
+					self.Used[j] = true
+					local o = 1
+					while true do
+						local next = anim[i + o]
+						if next and next[j] then
+							w.nx = i + o
+							break
+						end
+						o = o + 1
+						if o >= #(anim) then
+							break
+						end
+					end
+				until true
+			end
+		end
+		self.Length = length
+	end
+	function AnimationTrack.IsPrioritized(self, j)
+		local main = AnimationTrack.Rigs[self.Rig]
+		if not main then
+			return
+		end
+		if not main.Animations then
+			return
+		end
+		local highest = 0
+		local prioritized
+		for _, v in pairs(main.Animations) do
+			if v.Weight > highest and v.IsPlaying then
+				prioritized = v
+				highest = v.Weight
+			end
+		end
+		if prioritized == self then
+			return true
+		elseif prioritized ~= self and prioritized then
+			if not prioritized.Used[j] then
+				local second
+				local highest = 0
+				for _, v in pairs(main.Animations) do
+					if v.Weight > highest and v.IsPlaying and v ~= prioritized then
+						second = v
+						highest = v.Weight
+					end
+				end
+				return second == self
+			end
+		end
+	end
+	function AnimationTrack.setCFrame(self, name, cf, info)
+		local weld = AnimationTrack.Rigs[self.Rig].Welds[name]
+		local poses = AnimationTrack.Rigs[self.Rig].Poses
+		if not info then
+			AnimationTrack.Rigs[self.Rig].Poses[name] = cf
+			weld.C0 = weld.Parent.C0 * cf
+		else
+			local start = tick()
+			while (tick() - start) < info.Time and AnimationTrack.Rigs[self.Rig] and AnimationTrack.Rigs[self.Rig].Poses do
+				poses[name] = poses[name]:Lerp(
+					cf,
+					tween:GetValue((tick() - start) / info.Time, info.EasingStyle, info.EasingDirection)
+				)
+				weld.C0 = weld.Parent.C0 * poses[name]
+				twait()
+			end
+		end
+	end
+	function AnimationTrack.goToKeyframe(self, v, inst, name)
+		local speed = self.Speed
+		if self.Binds[v] then
+			self.Binds[v]:Fire()
+		end
+		for j, w in pairs(v) do
+			local br
+			repeat
+				if typeof(w) ~= "table" or not AnimationTrack.Rigs[self.Rig].Poses[j] then
+					if typeof(w) == "string" and self.Binds[j] then
+						self.Binds[j]:Fire(w)
+					end
+					break
+				end
+				if not AnimationTrack.Rigs[self.Rig].Animations then
+					br = true
+					break
+				end
+				local tm = 0
+				local nx = w.nx
+				local cf = w.cf
+				local poses = AnimationTrack.Rigs[self.Rig].Poses
+				if nx then
+					cf = self.Animation[w.nx][j].cf
+					tm = self.Animation[w.nx].tm - v.tm
+				end
+				if w.es == "Constant" or inst then
+					if self:IsPrioritized(j) then
+						if inst then
+							poses[j] = cf
+							break
+						end
+						local start = tick()
+						coroutine.wrap(function()
+							repeat
+								speed = self.Speed
+								poses[j] = cf
+								twait()
+							until tick() - start >= (tm / speed) or not self:IsPrioritized(j)
+						end)()
+					end
+					break
+				end
+				if not enumExists("EasingStyle", w.es) then
+					w.es = "Linear"
+				end
+				coroutine.wrap(function()
+					local s = tick()
+					local current = poses[j]
+					local es, ed = Enum.EasingStyle[w.es], Enum.EasingDirection[w.ed]
+					repeat
+						twait()
+						speed = self.Speed
+						local cf = current:Lerp(cf, tween:GetValue(
+							(tick() - s) / (tm / speed), es, ed
+							))
+						local alpha = min(self.lerpFactor * max(1, speed), 1)
+						if self:IsPrioritized(j) then
+							if alpha < 1 then
+								poses[j] = poses[j]:Lerp(cf, alpha)
+							else
+								poses[j] = cf
+							end
+						end
+					until (tick() - s) >= (tm / speed)
+				end)()
+			until true
+			if br then
+				break
+			end
+		end
+	end
+	function AnimationTrack.Play(self, speed)
+		assert(self.Rig, "Must use setRig before playing!")
+		speed = speed or self.Speed
+		if self.IsPlaying then
+			for _, v in pairs(self.Connections) do
+				v:Disconnect()
+			end
+		end
+		self.Speed = speed
+		self.IsPlaying = true
+		self.Weight = self.RealWeight
+		self.TimePosition = 0
+		if false then
+			coroutine.wrap(function()
+				repeat
+					twait()
+					for _, v in ipairs(self.Animation) do
+						self:goToKeyframe(v, true, self.Name)
+						self.TimePosition = self.TimePosition + v.tm
+					end
+					self.TimePosition = self.Length
+					task.wait(self.Stall)
+				until not self.Looped
+				self:Stop()
+			end)()
+			return
+		end
+		coroutine.wrap(function()
+			repeat
+				self.TimePosition = 0
+				for _, v in ipairs(self.Animation) do
+					local cnt
+					local time = v.tm
+					cnt = game:GetService("RunService").PostSimulation:Connect(function()
+						if self.TimePosition >= time then
+							cnt:Disconnect()
+							self:goToKeyframe(v, false, self.Name)
+						end
+					end)
+					insert(self.Connections, cnt)
+				end
+				repeat
+					self.TimePosition = self.TimePosition + twait() * self.Speed
+				until self.TimePosition >= (self.Length + (self.Looped and 0 or self.Stall)) or not self.IsPlaying
+				if self.TimePosition >= self.Length and not self.Looped then
+					self:Stop()
+				end
+				if self.Looped then
+					self.DidLoop:Fire()
+				end
+			until not self.Looped or not self.IsPlaying
+		end)()
+	end
+	function AnimationTrack.Stop(self)
+		if not self.IsPlaying then
+			return
+		end
+		self.Stopped:Fire()
+		self.Weight = 0
+		self.IsPlaying = false
+		self.TimePosition = self.Length
+		if self.Connections then
+			for _, cnt in pairs(self.Connections) do
+				cnt:Disconnect()
+			end
+		end
+	end
+	function AnimationTrack.AdjustSpeed(self, speed)
+		self.Speed = speed or 1
+	end
+end
+
+local function KeyframeSequenceToAnitrackerTable(kseq)
+	local frames = {}
+	local keyframes = kseq:GetKeyframes()
+	table.sort(keyframes, function(a,b) return a.Time < b.Time end)
+	for i,kf in ipairs(keyframes) do
+		local frame = {tm = kf.Time}
+		for _, inst in ipairs(kf:GetDescendants()) do
+			if inst:IsA("Pose") then
+				frame[inst.Name] = {cf = inst.CFrame, es = inst.EasingStyle.Name, ed = inst.EasingDirection.Name}
+			end
+		end
+		table.insert(frames, frame)
+	end
+	return frames
+end
+
+local ActiveAnimations = {}
+local lastAppliedPoses = {}
+
+local function ApplyJointCFrame(joint, targetC0)
+	joint.C0 = targetC0
+end
+
+local poseToTweenEasing = {
+	[Enum.PoseEasingStyle.Linear] = Enum.EasingStyle.Cubic,
+	[Enum.PoseEasingStyle.Cubic] = Enum.EasingStyle.Cubic,
+	[Enum.PoseEasingStyle.CubicV2] = Enum.EasingStyle.Cubic,
+	[Enum.PoseEasingStyle.Elastic] = Enum.EasingStyle.Cubic,
+	[Enum.PoseEasingStyle.Bounce] = Enum.EasingStyle.Cubic,
+	[Enum.PoseEasingStyle.Constant] = nil,
+}
+local poseToTweenDirection = {
+	[Enum.PoseEasingDirection.In] = Enum.EasingDirection.In,
+	[Enum.PoseEasingDirection.Out] = Enum.EasingDirection.Out,
+	[Enum.PoseEasingDirection.InOut] = Enum.EasingDirection.InOut,
+}
+
+local function TweenJoint(joint, targetC0, duration, easingStyleEnum, easingDirectionEnum)
+	if not easingStyleEnum then
+		ApplyJointCFrame(joint, targetC0)
+		return nil
+	end
+	local finalDuration = (duration and duration > 0) and duration or 0.3
+	local tweenInfo = TweenInfo.new(finalDuration, easingStyleEnum, easingDirectionEnum or Enum.EasingDirection.In)
+	local tweenObj = TweenService:Create(joint, tweenInfo, {C0 = targetC0})
+	tweenObj:Play()
+	return tweenObj
+end
+
+function ApplyJointUpdate(jointName)
+	local highestPriority = -math.huge
+	local bestPose = nil
+	for _, anim in pairs(ActiveAnimations) do
+		if anim.IsPlaying and anim.JointPoses and anim.JointPoses[jointName] then
+			if anim.Priority >= highestPriority then
+				highestPriority = anim.Priority
+				bestPose = anim.JointPoses[jointName]
+			end
+		end
+	end
+	if bestPose then
+		local shouldApply = true
+		local isConstant = (bestPose.PoseEasingStyle == Enum.PoseEasingStyle.Constant)
+		if isConstant and lastAppliedPoses[jointName] then
+			local lastPose = lastAppliedPoses[jointName]
+			local posDiff = (bestPose.C0.Position - lastPose.C0.Position).Magnitude
+			local cx, cy, cz = bestPose.C0:ToEulerAnglesXYZ()
+			local lx, ly, lz = lastPose.C0:ToEulerAnglesXYZ()
+			local rotDiff = Vector3.new(math.abs(cx - lx), math.abs(cy - ly), math.abs(cz - lz)).Magnitude
+			if posDiff < 0.01 and rotDiff < 0.01 then shouldApply = false end
+		end
+		if shouldApply then
+			local tweenEasingStyle = poseToTweenEasing[bestPose.PoseEasingStyle] or Enum.EasingStyle.Linear
+			local tweenEasingDirection = poseToTweenDirection[bestPose.PoseEasingDirection] or Enum.EasingDirection.In
+			if not tweenEasingStyle then
+				ApplyJointCFrame(bestPose.Joint, bestPose.C0)
+			else
+				TweenJoint(bestPose.Joint, bestPose.C0, bestPose.Duration or 0, tweenEasingStyle, tweenEasingDirection)
+			end
+			lastAppliedPoses[jointName] = bestPose
+		end
+	end
+end
+
+local function CurveAnimationToAnitrackerTable(curveAnim)
+	local jointCurves = {}
+	local keyTimesSet = {}
+	local function collectFloatCurveTimes(fc)
+		if not fc then return end
+		if type(fc.GetKeys) == "function" then
+			for _, key in ipairs(fc:GetKeys()) do
+				if key and key.Time then
+					keyTimesSet[key.Time] = true
+				end
+			end
+		end
+	end
+	for _, obj in ipairs(curveAnim:GetDescendants()) do
+		if obj:IsA("FloatCurve") then
+			collectFloatCurveTimes(obj)
+		end
+		if obj:IsA("Vector3Curve") or obj:IsA("RotationCurve") or obj:IsA("EulerRotationCurve") or obj:IsA("CompositeValueCurve") then
+			local parent = obj.Parent
+			local jointName = parent and parent.Name or obj.Name
+			jointCurves[jointName] = jointCurves[jointName] or {}
+			if obj:IsA("Vector3Curve") then
+				local lname = obj.Name:lower()
+				if lname:find("position") or lname:find("pos") then
+					jointCurves[jointName].position = obj
+				else
+					jointCurves[jointName].vector = obj
+				end
+			elseif obj:IsA("RotationCurve") then
+				jointCurves[jointName].rotation = obj
+			elseif obj:IsA("EulerRotationCurve") then
+				jointCurves[jointName].eulerRotation = obj
+			elseif obj:IsA("CompositeValueCurve") then
+				jointCurves[jointName].composite = obj
+			end
+			for _, child in ipairs(obj:GetDescendants()) do
+				if child:IsA("FloatCurve") then
+					collectFloatCurveTimes(child)
+				end
+			end
+		end
+	end
+	local times = {}
+	for t in pairs(keyTimesSet) do
+		table.insert(times, t)
+	end
+	table.sort(times)
+	if #times == 0 then
+		table.insert(times, 0)
+	end
+	local frames = {}
+	for _, t in ipairs(times) do
+		local frame = { tm = t }
+		for jointName, data in pairs(jointCurves) do
+			local pos = nil
+			local rot = nil
+			if data.position then
+				local ok, val = pcall(function() return data.position:GetValueAtTime(t) end)
+				if ok then
+					if typeof(val) == "Vector3" or type(val) == "table" then
+						if typeof(val) == "Vector3" then
+							pos = val
+						else
+							local x = val[1] or 0
+							local y = val[2] or 0
+							local z = val[3] or 0
+							pos = Vector3.new(x, y, z)
+						end
+					end
+				end
+			elseif data.vector then
+				local ok, val = pcall(function() return data.vector:GetValueAtTime(t) end)
+				if ok then
+					if typeof(val) == "Vector3" or type(val) == "table" then
+						if typeof(val) == "Vector3" then
+							pos = val
+						else
+							local x = val[1] or 0
+							local y = val[2] or 0
+							local z = val[3] or 0
+							pos = Vector3.new(x, y, z)
+						end
+					end
+				end
+			end
+			if data.rotation then
+				local ok, rval = pcall(function() return data.rotation:GetValueAtTime(t) end)
+				if ok and typeof(rval) == "CFrame" then
+					rot = rval
+				end
+			elseif data.eulerRotation then
+				local ok, rval = pcall(function() return data.eulerRotation:GetRotationAtTime(t) end)
+				if ok and typeof(rval) == "CFrame" then
+					rot = rval
+				else
+					local ok2, angles = pcall(function() return data.eulerRotation:GetAnglesAtTime(t) end)
+					if ok2 and type(angles) == "table" then
+						local ax = angles[1] or 0
+						local ay = angles[2] or 0
+						local az = angles[3] or 0
+						rot = CFrame.fromOrientation(ax, ay, az)
+					end
+				end
+			elseif data.composite then
+				local foundRot = nil
+				for _, child in ipairs(data.composite:GetDescendants()) do
+					if child:IsA("RotationCurve") then
+						local ok, rval = pcall(function() return child:GetValueAtTime(t) end)
+						if ok and typeof(rval) == "CFrame" then foundRot = rval; break end
+					elseif child:IsA("EulerRotationCurve") then
+						local ok, rval = pcall(function() return  child:GetRotationAtTime(t) end)
+						if ok and typeof(rval) == "CFrame" then foundRot = rval; break end
+						local ok2, angles = pcall(function() return child:GetAnglesAtTime(t) end)
+						if ok2 and type(angles) == "table" then
+							local ax = angles[1] or 0
+							local ay = angles[2] or 0
+							local az = angles[3] or 0
+							foundRot = CFrame.fromOrientation(ax, ay, az)
+							break
+						end
+					end
+				end
+				if foundRot then rot = foundRot end
+				if not pos then
+					local foundPos = nil
+					for _, child in ipairs(data.composite:GetDescendants()) do
+						if child:IsA("Vector3Curve") then
+							local ok, val = pcall(function() return child:GetValueAtTime(t) end)
+							if ok and (typeof(val) == "Vector3" or type(val) == "table") then
+								if typeof(val) == "Vector3" then
+									foundPos = val
+								else
+									local x = val[1] or 0
+									local y = val[2] or 0
+									local z = val[3] or 0
+									foundPos = Vector3.new(x, y, z)
+								end
+								break
+							end
+						end
+					end
+					if foundPos then pos = foundPos end
+				end
+			end
+			local cf = nil
+			if pos and rot then
+				cf = CFrame.new(pos) * rot
+			elseif rot then
+				cf = rot
+			elseif pos then
+				cf = CFrame.new(pos)
+			end
+			if cf then
+				frame[jointName] = { cf = cf, es = "Linear", ed = "InOut" }
+			end
+		end
+		table.insert(frames, frame)
+	end
+	return frames
+end
+
+local function CreateAnitrackFromKeyframe(Rig, KeyframeSequenceOrCurveAnimation, priority)
+	local animTable
+	if typeof(KeyframeSequenceOrCurveAnimation) == "Instance" and KeyframeSequenceOrCurveAnimation.ClassName == "CurveAnimation" then
+		animTable = CurveAnimationToAnitrackerTable(KeyframeSequenceOrCurveAnimation)
+	else
+		animTable = KeyframeSequenceToAnitrackerTable(KeyframeSequenceOrCurveAnimation)
+	end
+	local track = AnimationTrack.new()
+	track:setAnimation(animTable)
+	track:setRig(Rig)
+	track.Looped = false
+	local wrapper = {
+		Speed = 1,
+		Looped = track.Looped,
+		Stopped = true,
+		IsPlaying = false,
+		Priority = priority or 0,
+		JointPoses = {},
+		Length = track.Length or 0,
+		TimeReachedCallbacks = {},
+		PersistentCallbacks = {},
+		_track = track,
+		_onEndedConn = nil
+	}
+	function wrapper:AddTimeReachedCallback(time, callback)
+		self.PersistentCallbacks[time] = callback
+	end
+	function wrapper:Play(fadeInTime, onEnded, speed)
+		if self.IsPlaying then return end
+		self.Speed = math.abs(speed or 1)
+		self.Stopped = false
+		self.IsPlaying = true
+		for t,c in pairs(self.PersistentCallbacks) do
+			self.TimeReachedCallbacks[t] = c
+		end
+		local track = self._track
+		track:AdjustSpeed(self.Speed)
+		track.Looped = self.Looped
+		track:AdjustWeight(self.Priority)
+		ActiveAnimations[self] = self
+		if self._onEndedConn then
+			self._onEndedConn:Disconnect()
+			self._onEndedConn = nil
+		end
+		self._onEndedConn = track.Stopped:Connect(function()
+			if onEnded then
+				onEnded()
+			end
+			self.IsPlaying = false
+			self.Stopped = true
+			ActiveAnimations[self] = nil
+		end)
+		track:Play(self.Speed)
+		task.spawn(function()
+			local called = {}
+			while track.IsPlaying do
+				local tp = track.TimePosition
+				for t,cb in pairs(self.TimeReachedCallbacks) do
+					if tp >= t and not called[t] then
+						pcall(cb)
+						called[t] = true
+					end
+				end
+				task.wait(0.05)
+			end
+		end)
+	end
+	function wrapper:Stop(silent, keepPose)
+		if self.Stopped then return end
+		self.Stopped = true
+		self.IsPlaying = false
+		if self._onEndedConn then
+			self._onEndedConn:Disconnect()
+			self._onEndedConn = nil
+		end
+		self.TimeReachedCallbacks = {}
+		local track = self._track
+		track:Stop()
+		ActiveAnimations[self] = nil
+	end
+	function wrapper:AddTimeReachedCallbackOnce(time, callback)
+		self.TimeReachedCallbacks[time] = callback
+	end
+	return wrapper
+end
+local function LoadAnimation(Rig, KeyframeSequenceOrCurveAnimation, priority)
+	local anim = CreateAnitrackFromKeyframe(Rig, KeyframeSequenceOrCurveAnimation, priority)
+	return anim
+end
+
+local idleAnim = LoadAnimation(character, idleAnimData, 2) idleAnim.Looped = true
+local walkAnim = LoadAnimation(character, walkAnimData, 2) walkAnim.Looped = true
+local makevanishAnim = LoadAnimation(character, makevanishAnimData, 3) makevanishAnim.Looped = false
+local currentAnim = nil
+local function PlayAnimation(anim)
+	if currentAnim == anim then return end
+	if currentAnim then currentAnim:Stop(true, true) end
+	currentAnim = anim
+	currentAnim:Play(0.2, nil, 1)
+end
+
+RunService.Heartbeat:Connect(function()
+	if humanoid.MoveDirection.Magnitude > 0 then
+		if AllowIdleWalk then
+			PlayAnimation(walkAnim)
+		end
+	else
+		if AllowIdleWalk then
+			PlayAnimation(idleAnim)
+		end
+	end
+end)
+for i,v in pairs(character:GetDescendants()) do
+	if v:IsA("BasePart") then
+		task.spawn(function()
+			replicate(v, true, true)
+		end)
+	end
+end
+local function hitbox(cframe, size, filter, needsHumanoid)
+	local params = OverlapParams.new()
+	params.FilterDescendantsInstances = filter
+	params.FilterType = Enum.RaycastFilterType.Exclude
+
+	local parts = workspace:GetPartBoundsInBox(cframe, size, params)
+	local hitCharacters = {}
+	local hits = {}
+
+	for _, part in ipairs(parts) do
+		if needsHumanoid then
+			local model = part:FindFirstAncestorOfClass("Model")
+			if model then
+				local hum = model:FindFirstChildOfClass("Humanoid")
+				if hum and not hitCharacters[model] then
+					hitCharacters[model] = true
+					table.insert(hits, part)
+				end
+			end
+		else
+			table.insert(hits, part)
+		end
+	end
+
+	return hits
+end
+local function dimension(character)
+	task.spawn(function()
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if not humanoid then return end
+		local root = character:FindFirstChild("HumanoidRootPart")
+		if not root then return end
+		local rooms = {"TerrorRoom", "HealingRoom", "CloudRoom", "ForestRoom"}
+		local roomselect = rooms[math.random(1, #rooms)]
+		local room = stuff:FindFirstChild(roomselect):Clone()
+		room.Parent = workspace
+		room:PivotTo(CFrame.new(0,5000,0) * CFrame.new(0,math.random(5000,20000),0))
+		local spawny = room:FindFirstChild("Spawn")
+		for i,v in pairs(room:GetDescendants()) do
+			if v:IsA("BasePart") then
+				replicate(v, false, false)
+			end
+		end
+		character:PivotTo(spawny.CFrame)
+		syncpos(character, false)
+		Debris:AddItem(room, 60)
+	end)
+end
+
+local function getClosestCharacter(position)
+	local closestRoot = nil
+	local closestDistance = math.huge
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if root then
+			local distance = (root.Position - position).Magnitude
+			if distance < closestDistance then
+				closestDistance = distance
+				closestRoot = root
+			end
+		end
+	end
+
+	return closestRoot
+end
+
+local function spiral(spiralPart, followPart)
+	task.spawn(function()
+	local roll = 0
+	local rollSpeed = math.rad(90)
+
+	RunService.RenderStepped:Connect(function(dt)
+		if not spiralPart.Parent or not followPart.Parent then
+			return
+		end
+
+		local position = followPart.Position
+		local closestRoot = getClosestCharacter(position)
+		if not closestRoot then
+			return
+		end
+
+		roll += rollSpeed * dt
+
+		local look = CFrame.lookAt(position, closestRoot.Position)
+		spiralPart.CFrame = look * CFrame.Angles(0, 0, roll)
+	end)
+	end)
+end
+local function obliterate(part)
+	table.insert(delete, part)
+	local clone = Instance.new("Part")
+	clone.CFrame = part.CFrame
+	clone.Size = part.Size
+	clone.Anchored = true
+	clone.Transparency = 0.5
+	clone.Color = Color3.new(0,0,0)
+	clone.CanCollide = false
+	clone.Parent = workspace
+	local tween = game:GetService("TweenService"):Create(clone, TweenInfo.new(2), {Size = Vector3.new(0,0,0), CFrame = CFrame.new(clone.Position) * CFrame.new(0,10,0), Transparency = 1})
+	tween:Play()
+	replicate(clone, true, false)
+	Debris:AddItem(clone, 3)
+end
+local mouse = LocalPlayer:GetMouse()
+local tool1 = Instance.new("Tool")
+tool1.Name = "The Dissapearances"
+tool1.RequiresHandle = false
+tool1.ToolTip = "Raise a hand and send a person to a random dimension which will take them atleast a few seconds to get out of."
+tool1.Parent = LocalPlayer.Backpack
+tool1.Activated:Connect(function()
+	makevanishAnim:Play(0.5, nil, 1)
+	local alreadyHit = {}
+	local root = character:FindFirstChild("HumanoidRootPart")
+	local hitsDetected = hitbox(root.CFrame:ToWorldSpace(CFrame.new(0,0,-5)), Vector3.new(5,7.5,7.5), {character}, false)
+	for _, part in pairs(hitsDetected) do
+		local humanoid = part.Parent:FindFirstChildOfClass("Humanoid")
+		if humanoid and not table.find(alreadyHit, humanoid.Parent) then
+			dimension(humanoid.Parent)
+			table.insert(alreadyHit, humanoid.Parent)
+		end
+	end
+end)
+local tool2 = Instance.new("Tool")
+tool2.Name = "Spiral Void"
+tool2.RequiresHandle = false
+tool2.ToolTip = "Summon a space vortex infront of you which flies forwards, sucking in any players in it's way and obliterating them."
+tool2.Parent = LocalPlayer.Backpack
+local blackholes = {character}
+tool2.Activated:Connect(function()
+	local root = character:FindFirstChild("HumanoidRootPart")
+	local blackholey = stuff:FindFirstChild("BlackHole")
+	local blackhole = blackholey:Clone()
+	blackhole.Parent = workspace
+	blackhole.Anchored = false
+	blackhole.CFrame = root.CFrame:ToWorldSpace(CFrame.new(0,0,-5))
+	local particle = blackhole.HoleParticle
+	spiral(particle, blackhole)
+	local direction = (mouse.Hit.Position - root.Position).Unit
+	local bodyvelocity = Instance.new("BodyVelocity")
+	bodyvelocity.Velocity = direction * 30
+	bodyvelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+	bodyvelocity.Parent = blackhole
+	Debris:AddItem(blackhole, 10)
+	local hit = {}
+	table.insert(blackholes, blackhole)
+	task.spawn(function()
+		while blackhole do
+			wait()
+			local hitsDetected = hitbox(blackhole.CFrame, Vector3.new(7.5,7.5,7.5), blackholes, false)
+			for _, part in pairs(hitsDetected) do
+				if table.find(hit, part) then return end
+				local humanoid = part.Parent:FindFirstChildOfClass("Humanoid")
+				if humanoid or part.Anchored == false then
+					obliterate(part)
+					table.insert(hit, part)
+				end
+			end
+		end
+	end)
+	replicate(blackhole, true, false)
+	replicate(particle, true, false)
+end)
