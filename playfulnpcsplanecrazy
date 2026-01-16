@@ -14,9 +14,9 @@ local armParts = {}
 local legParts = {}
 -- colors
 for _, v in ipairs(aircraft:GetDescendants()) do
+	if v:IsA("BasePart") then
 v.CanCollide = false
 			v.Massless = true
-	if v:IsA("BasePart") then
 		local c = v.BrickColor.Name:lower()
 		if c == "cyan" then
 			table.insert(torsoParts, v)
@@ -185,7 +185,7 @@ while #armParts >= 2 and #legParts >= 2 and #headParts >= 1 and #torsoParts >= 1
 	if humanoid and root then
 		humanoid.DisplayName = ""
 		humanoid.NameDisplayDistance = 0
-		humanoid.WalkSpeed = 32
+		humanoid.WalkSpeed = 120
 		setupAnimation(humanoid, root)
 
 		task.spawn(function()
