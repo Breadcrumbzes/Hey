@@ -14,6 +14,8 @@ local armParts = {}
 local legParts = {}
 -- colors
 for _, v in ipairs(aircraft:GetDescendants()) do
+v.CanCollide = false
+			v.Massless = true
 	if v:IsA("BasePart") then
 		local c = v.BrickColor.Name:lower()
 		if c == "cyan" then
@@ -23,10 +25,7 @@ for _, v in ipairs(aircraft:GetDescendants()) do
 		elseif c == "deep orange" then
 			table.insert(headParts, v)
 		elseif v.Color == Color3.fromRGB(0,255,0) then
-			table.insert(legParts, v)
-		elseif v.Color == Color3.fromRGB(0,0,0) then
-			v.CanCollide = false
-			v.Massless = true
+			table.insert(legParts, v)			
 		end
 	end
 end
