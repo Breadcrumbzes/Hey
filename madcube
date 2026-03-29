@@ -277,6 +277,9 @@ task.spawn(function()
 					CFrame = CFrame.lookAt(camGoalPos, hunter.Position)
 				}):Play()
 			end)
+            task.delay(7, function()
+workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+end)
 			
 			-- At +7 seconds into this phase: face switch + rapid shake + looped sound + song change
 			task.delay(7, function()
