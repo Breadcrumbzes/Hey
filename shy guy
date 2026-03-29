@@ -486,8 +486,8 @@ local function explosionRain()
 				return
 			end
 			local pos = hrp.Position + Vector3.new(math.random(-40, 40), math.random(12, 32), math.random(-40, 40))
-			warningMarker(pos, 0.7)
-			task.delay(0.7, function()
+			warningMarker(pos, 3)
+			task.delay(3, function()
 				if alive() then
 					explosionFlash(pos, 10 + math.random(0, 7), 180000)
 					if math.random() < 0.35 then
@@ -605,8 +605,8 @@ end
 
 local function localNukeSequence()
 	local pos = hrp.Position + Vector3.new(math.random(-14, 14), math.random(2, 8), math.random(-14, 14))
-	warningMarker(pos, 0.7)
-	task.delay(0.7, function()
+	warningMarker(pos, 2)
+	task.delay(2, function()
 		if not alive() then
 			return
 		end
