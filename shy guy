@@ -87,8 +87,8 @@ local character, humanoid, hrp = getCharacter()
 
 local function applyStartingHealth()
 	if humanoid and humanoid.Parent then
-		humanoid.MaxHealth = 175
-		humanoid.Health = 175
+		humanoid.MaxHealth = 275
+		humanoid.Health = 275
 	end
 end
 
