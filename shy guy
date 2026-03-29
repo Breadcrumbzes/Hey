@@ -8,9 +8,9 @@ local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
 local SoundService = game:GetService("SoundService")
+local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
 local player = Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
 local camera = workspace.CurrentCamera
 
 local DURATION = 120
@@ -35,8 +35,10 @@ local running = true
 local shuttingDown = false
 local cleanupDone = false
 local activePhase = ""
-local apocalypseBuilt = false
 local connections: { RBXScriptConnection } = {}
+
+local apocalypseOrbsBuilt = false
+local apocalypseOrbConnections: { RBXScriptConnection } = {}
 
 local function track(conn: RBXScriptConnection)
 	table.insert(connections, conn)
@@ -88,7 +90,7 @@ musicFolder.Parent = SoundService
 
 local phaseSounds: { [string]: Sound } = {}
 
-local function makePhaseSound(name: string, id: string, volume: number)
+local function makePhaseSound(name: string, id: string)
 	local s = Instance.new("Sound")
 	s.Name = name .. "Music"
 	s.SoundId = id
@@ -99,10 +101,10 @@ local function makePhaseSound(name: string, id: string, volume: number)
 	return s
 end
 
-makePhaseSound("Calm", MUSIC.Calm, 0.65)
-makePhaseSound("Warmup", MUSIC.Warmup, 0.72)
-makePhaseSound("Escalation", MUSIC.Escalation, 0.8)
-makePhaseSound("Apocalypse", MUSIC.Apocalypse, 0.9)
+makePhaseSound("Calm", MUSIC.Calm)
+makePhaseSound("Warmup", MUSIC.Warmup)
+makePhaseSound("Escalation", MUSIC.Escalation)
+makePhaseSound("Apocalypse", MUSIC.Apocalypse)
 
 local function playPhaseMusic(name: string)
 	if activePhase == name or shuttingDown then
@@ -110,13 +112,20 @@ local function playPhaseMusic(name: string)
 	end
 
 	activePhase = name
+	local targetVolumes = {
+		Calm = 0.65,
+		Warmup = 0.72,
+		Escalation = 0.8,
+		Apocalypse = 0.9,
+	}
+
 	for phaseName, sound in pairs(phaseSounds) do
 		if phaseName == name then
 			if not sound.IsPlaying then
 				sound:Play()
 			end
 			TweenService:Create(sound, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-				Volume = ({ Calm = 0.65, Warmup = 0.72, Escalation = 0.8, Apocalypse = 0.9 })[phaseName] or 0.7,
+				Volume = targetVolumes[phaseName] or 0.7,
 			}):Play()
 		else
 			if sound.IsPlaying then
@@ -266,70 +275,77 @@ local function warningMarker(pos: Vector3, life: number)
 	return marker
 end
 
-local function telegraphedExplosion(
+local function telegraphedMushroomExplosion(
 	pos: Vector3,
-	radius: number,
-	pressure: number,
-	damage: number,
-	knockbackForce: number?,
-	orangeAftershock: boolean?
+	telegraphDelay: number?,
+	telegraphTime: number?,
+	damage: number?,
+	knockForce: number?,
+	blastRadius: number?,
+	pressure: number?
 )
-	local orb = mkPart(Vector3.new(2.5, 2.5, 2.5), CFrame.new(pos), Color3.fromRGB(255, 55, 55), Enum.Material.Neon, true, false, 0.15)
-	orb.Shape = Enum.PartType.Ball
+	local startDelay = telegraphDelay or 0.1
+	local warnTime = telegraphTime or 0.7
+
+	local warn = mkPart(Vector3.new(2, 2, 2), CFrame.new(pos), Color3.fromRGB(255, 40, 40), Enum.Material.Neon, true, false, 0.15)
+	warn.Shape = Enum.PartType.Ball
 
 	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(255, 55, 55)
-	light.Range = 18
-	light.Brightness = 1.6
-	light.Parent = orb
+	light.Color = Color3.fromRGB(255, 230, 85)
+	light.Range = 24
+	light.Brightness = 3
+	light.Parent = warn
 
-	task.delay(0.1, function()
-		if not orb.Parent or not alive() then
-			if orb.Parent then
-				orb:Destroy()
-			end
+	task.delay(startDelay, function()
+		if not warn.Parent then
 			return
 		end
 
-		local start = os.clock()
-		local flashTick = 0
-		local colors = {
-			Color3.fromRGB(255, 55, 55),
-			Color3.fromRGB(255, 225, 70),
-		}
+		local red = Color3.fromRGB(255, 50, 50)
+		local yellow = Color3.fromRGB(255, 230, 80)
+		local elapsed = 0
+		local flashConn: RBXScriptConnection? = nil
 
-		while orb.Parent and alive() and (os.clock() - start < 0.7) do
-			flashTick += 1
-			local c = colors[(flashTick % 2) + 1]
-			orb.Color = c
-			light.Color = c
-			light.Brightness = 1.8 + (flashTick * 0.08)
-			orb.Size = Vector3.new(2.5, 2.5, 2.5) + Vector3.new(1.8, 1.8, 1.8) * ((os.clock() - start) / 0.7)
-			task.wait(0.1)
-		end
-
-		if orb.Parent and alive() then
-			if orangeAftershock then
-				shockwave(pos, 6, 26, Color3.fromRGB(255, 140, 50), 0.35)
+		flashConn = RunService.Heartbeat:Connect(function(dt)
+			if not warn.Parent then
+				if flashConn then
+					flashConn:Disconnect()
+				end
+				return
 			end
 
-			explosionFlash(pos, radius, pressure)
-			applyLocalDamage(damage)
-			if knockbackForce and hrp and hrp.Parent then
-				applyKnockback(hrp.Position - pos, knockbackForce)
-			end
-		end
+			elapsed += dt
+			local t = math.floor(elapsed * 12) % 2
+			warn.Color = (t == 0) and red or yellow
+			light.Color = (t == 0) and red or yellow
+			light.Brightness = 2.6 + math.sin(elapsed * 16) * 0.6
+		end)
 
-		if orb.Parent then
-			orb:Destroy()
-		end
+		task.delay(warnTime, function()
+			if flashConn then
+				flashConn:Disconnect()
+			end
+			if warn.Parent then
+				warn:Destroy()
+			end
+
+			explosionFlash(pos, blastRadius or 16, pressure or 600000)
+			shockwave(pos, 8, 90, Color3.fromRGB(255, 180, 80), 0.8)
+			mushroomCloud(pos)
+
+			if damage and damage > 0 then
+				applyLocalDamage(damage)
+			end
+			if knockForce and knockForce > 0 then
+				local dir = hrp and hrp.Parent and (hrp.Position - pos) or Vector3.new(0, 1, 0)
+				applyKnockback(dir, knockForce)
+			end
+		end)
 	end)
-
-	return orb
 end
 
-local function createProjectile(origin: Vector3, target: Vector3, speed: number, radius: number, damage: number, color: Color3?)
-	local proj = mkPart(Vector3.new(radius, radius, radius), CFrame.new(origin), color or Color3.fromRGB(255, 70, 70), Enum.Material.Neon, true, false, 0)
+local function createProjectile(origin: Vector3, target: Vector3, speed: number, radius: number, damage: number)
+	local proj = mkPart(Vector3.new(radius, radius, radius), CFrame.new(origin), Color3.fromRGB(255, 70, 70), Enum.Material.Neon, true, false, 0)
 	proj.Shape = Enum.PartType.Ball
 
 	local a0 = Instance.new("Attachment")
@@ -379,9 +395,15 @@ local function createProjectile(origin: Vector3, target: Vector3, speed: number,
 				shockwave(hitPos, 4, 18, Color3.new(1, 0.65, 0.2), 0.3)
 				applyLocalDamage(damage)
 				applyKnockback(hrp.Position - hitPos, 70 + radius * 18)
+
 				if math.random() < 0.3 then
-					mushroomCloud(hitPos)
+					if currentPhase() == "Apocalypse" then
+						telegraphedMushroomExplosion(hitPos, 0.1, 0.7, 1, 55, 14, 220000)
+					else
+						mushroomCloud(hitPos)
+					end
 				end
+
 				if conn then
 					conn:Disconnect()
 				end
@@ -397,8 +419,6 @@ local function createProjectile(origin: Vector3, target: Vector3, speed: number,
 			proj:Destroy()
 		end
 	end)
-
-	return proj
 end
 
 local function telegraphedMissile(origin: Vector3, target: Vector3, speed: number, radius: number, damage: number, delayTime: number)
@@ -412,10 +432,6 @@ local function telegraphedMissile(origin: Vector3, target: Vector3, speed: numbe
 end
 
 local function createCubeDrone(spawnOffset: Vector3, size: number, speed: number, damage: number)
-	if not hrp or not hrp.Parent then
-		return
-	end
-
 	local cube = mkPart(Vector3.new(size, size, size), hrp.CFrame * CFrame.new(spawnOffset), Color3.fromRGB(math.random(80, 255), math.random(20, 120), math.random(20, 120)), Enum.Material.Metal, true, false, 0)
 	cube.Shape = Enum.PartType.Block
 	mkSound(SND.Worm, cube, 0.6, 0.9 + math.random() * 0.25, true)
@@ -451,9 +467,15 @@ local function createCubeDrone(spawnOffset: Vector3, size: number, speed: number
 			shockwave(hitPos, 3, 16, Color3.new(1, 1, 1), 0.25)
 			applyLocalDamage(damage)
 			applyKnockback(hrp.Position - hitPos, 55)
+
 			if math.random() < 0.5 then
-				mushroomCloud(hitPos)
+				if currentPhase() == "Apocalypse" then
+					telegraphedMushroomExplosion(hitPos, 0.1, 0.7, 1, 40, 12, 160000)
+				else
+					mushroomCloud(hitPos)
+				end
 			end
+
 			if conn then
 				conn:Disconnect()
 			end
@@ -495,7 +517,7 @@ end
 local function missileStorm()
 	for i = 1, math.random(8, 16) do
 		task.delay(i * 0.08, function()
-			if not alive() or not hrp.Parent then
+			if not alive() then
 				return
 			end
 			local origin = hrp.Position + Vector3.new(math.random(-140, 140), math.random(30, 70), math.random(-140, 140))
@@ -508,7 +530,7 @@ end
 local function explosionRain()
 	for i = 1, math.random(4, 10) do
 		task.delay(math.random() * 0.9, function()
-			if not alive() or not hrp.Parent then
+			if not alive() then
 				return
 			end
 			local pos = hrp.Position + Vector3.new(math.random(-40, 40), math.random(12, 32), math.random(-40, 40))
@@ -517,7 +539,11 @@ local function explosionRain()
 				if alive() then
 					explosionFlash(pos, 10 + math.random(0, 7), 180000)
 					if math.random() < 0.35 then
-						mushroomCloud(pos)
+						if currentPhase() == "Apocalypse" then
+							telegraphedMushroomExplosion(pos, 0.1, 0.7, 1, 45, 13, 160000)
+						else
+							mushroomCloud(pos)
+						end
 					end
 				end
 			end)
@@ -525,55 +551,306 @@ local function explosionRain()
 	end
 end
 
-local function orbitingSatelliteSpawner(index: number)
-	if not hrp or not hrp.Parent then
-		return
+local function spawnSpinningWhiteSquares(center: Vector3, count: number)
+	for i = 1, count do
+		local part = mkPart(Vector3.new(0.9, 0.9, 0.9), CFrame.new(center), Color3.fromRGB(255, 255, 255), Enum.Material.Neon, true, false, 0)
+		part.Shape = Enum.PartType.Block
+
+		local dir = (Vector3.new(math.random(-100, 100), math.random(-10, 100), math.random(-100, 100)))
+		if dir.Magnitude < 0.001 then
+			dir = Vector3.new(1, 1, 0)
+		end
+		dir = dir.Unit
+		local speed = math.random(55, 105)
+		local life = 0
+		local spin = Vector3.new(math.random(-900, 900), math.random(-900, 900), math.random(-900, 900))
+
+		local conn: RBXScriptConnection?
+		conn = RunService.Heartbeat:Connect(function(dt)
+			if not part.Parent or not alive() then
+				if conn then
+					conn:Disconnect()
+				end
+				if part.Parent then
+					part:Destroy()
+				end
+				return
+			end
+
+			life += dt
+			part.CFrame = part.CFrame
+				+ dir * speed * dt
+				* CFrame.Angles(math.rad(spin.X * dt), math.rad(spin.Y * dt), math.rad(spin.Z * dt))
+
+			if hrp and hrp.Parent and (part.Position - hrp.Position).Magnitude < 4.5 then
+				explosionFlash(part.Position, 5, 90000)
+				if conn then
+					conn:Disconnect()
+				end
+				part:Destroy()
+				return
+			end
+
+			if life > 2.5 then
+				if conn then
+					conn:Disconnect()
+				end
+				part:Destroy()
+			end
+		end)
+
+		Debris:AddItem(part, 3)
 	end
+end
 
-	local sat = mkPart(Vector3.new(3, 3, 3), hrp.CFrame, Color3.fromRGB(255, 255, 255), Enum.Material.Neon, true, false, 0.15)
-	sat.Shape = Enum.PartType.Ball
+local function apocalypseDashOrb(orb: BasePart)
+	local startPos = orb.Position
+	local targetPos = hrp.Position + Vector3.new(math.random(-6, 6), math.random(-1, 4), math.random(-6, 6))
+	local dashTime = 0.6 + math.random() * 0.35
+	local elapsed = 0
+	local hit = false
 
-	local light = Instance.new("PointLight")
-	light.Range = 20
-	light.Brightness = 1.5
-	light.Parent = sat
-
-	local ang = index * (math.pi * 2 / 10)
-	local radius = 70 + (index % 4) * 18
-	local life = 0
+	orb.Material = Enum.Material.Neon
+	orb.Color = Color3.fromRGB(255, 80, 60)
 
 	local conn: RBXScriptConnection?
 	conn = RunService.Heartbeat:Connect(function(dt)
-		if not alive() or not sat.Parent or not hrp.Parent then
+		if not alive() or not orb.Parent or not hrp.Parent then
 			if conn then
 				conn:Disconnect()
-			end
-			if sat.Parent then
-				sat:Destroy()
 			end
 			return
 		end
 
-		life += dt
-		ang += dt * (0.6 + index * 0.04)
+		elapsed += dt
+		local alpha = math.clamp(elapsed / dashTime, 0, 1)
+		local pos = startPos:Lerp(targetPos, alpha)
+		orb.CFrame = CFrame.new(pos)
 
-		local orbitPos = hrp.Position + Vector3.new(math.cos(ang) * radius, math.sin(life * 2.2) * 8 + 18, math.sin(ang) * radius)
-		sat.CFrame = CFrame.new(orbitPos)
-
-		if progress() > 0.15 and math.random() < 0.012 + progress() * 0.02 then
-			local target = hrp.Position + Vector3.new(math.random(-4, 4), math.random(-1, 4), math.random(-4, 4))
-			telegraphedMissile(orbitPos, target, 85 + progress() * 45, 2, 1 + math.floor(progress() * 5), 0.45)
+		if (orb.Position - hrp.Position).Magnitude < 5.5 and not hit then
+			hit = true
+			local impact = orb.Position
+			explosionFlash(impact, 10, 220000)
+			shockwave(impact, 8, 32, Color3.fromRGB(255, 150, 40), 0.35)
+			applyLocalDamage(math.random(1, 5))
+			applyKnockback(hrp.Position - impact, 70 + math.random(0, 25))
+			if conn then
+				conn:Disconnect()
+			end
 		end
 
-		if math.random() < 0.008 then
-			mkSound(SND.Worm, sat, 0.6, 0.85 + math.random() * 0.25, false)
+		if elapsed >= dashTime then
+			if not hit then
+				local impact = orb.Position
+				explosionFlash(impact, 8, 180000)
+				shockwave(impact, 7, 28, Color3.fromRGB(255, 140, 35), 0.35)
+			end
+			if conn then
+				conn:Disconnect()
+			end
+		end
+	end)
+
+	task.wait(dashTime + 0.1)
+	orb.Color = Color3.fromRGB(255, 70, 70)
+end
+
+local function apocalypseSpewOrb(orb: BasePart)
+	orb.Material = Enum.Material.Neon
+	orb.Color = Color3.fromRGB(255, 60, 70)
+
+	local burstCount = math.random(18, 34)
+	for i = 1, burstCount do
+		task.delay((i - 1) * 0.03, function()
+			if not alive() or not orb.Parent then
+				return
+			end
+
+			local origin = orb.Position + Vector3.new(math.random(-3, 3), math.random(-3, 3), math.random(-3, 3))
+			local target = hrp.Position + Vector3.new(math.random(-5, 5), math.random(-1, 4), math.random(-5, 5))
+			local radius = math.random(1, 2)
+			local speed = 105 + math.random(0, 75)
+
+			local proj = mkPart(Vector3.new(radius, radius, radius), CFrame.new(origin), Color3.fromRGB(255, 80, 80), Enum.Material.Neon, true, false, 0)
+			proj.Shape = Enum.PartType.Ball
+
+			local a0 = Instance.new("Attachment")
+			a0.Position = Vector3.new(0, radius * 0.5, 0)
+			a0.Parent = proj
+
+			local a1 = Instance.new("Attachment")
+			a1.Position = Vector3.new(0, -radius * 0.5, 0)
+			a1.Parent = proj
+
+			local trail = Instance.new("Trail")
+			trail.Attachment0 = a0
+			trail.Attachment1 = a1
+			trail.Lifetime = 0.15
+			trail.MinLength = 0.1
+			trail.Parent = proj
+
+			mkSound(SND.Missile, proj, 0.55, 0.95 + math.random() * 0.2, false)
+
+			local dir = target - origin
+			if dir.Magnitude < 0.001 then
+				dir = Vector3.new(0, 0, -1)
+			end
+			dir = dir.Unit
+
+			local life = 0
+			local conn: RBXScriptConnection?
+			conn = RunService.Heartbeat:Connect(function(dt)
+				if not alive() or not proj.Parent then
+					if conn then
+						conn:Disconnect()
+					end
+					if proj.Parent then
+						proj:Destroy()
+					end
+					return
+				end
+
+				life += dt
+				proj.CFrame = proj.CFrame + dir * speed * dt
+
+				if hrp and hrp.Parent and (proj.Position - hrp.Position).Magnitude < 4.0 then
+					local hitPos = proj.Position
+					explosionFlash(hitPos, 7, 110000)
+					shockwave(hitPos, 3, 14, Color3.fromRGB(255, 200, 80), 0.2)
+					applyLocalDamage(math.random(1, 3))
+					if conn then
+						conn:Disconnect()
+					end
+					proj:Destroy()
+					return
+				end
+
+				if life > 6 then
+					if conn then
+						conn:Disconnect()
+					end
+					proj:Destroy()
+				end
+			end)
+		end)
+	end
+
+	task.wait(0.35)
+	orb.Color = Color3.fromRGB(255, 70, 70)
+end
+
+local function apocalypseFreezeOrb(orb: BasePart)
+	local origin = orb.Position
+	orb.Material = Enum.Material.Neon
+	orb.Color = Color3.fromRGB(255, 255, 255)
+
+	local light = orb:FindFirstChildOfClass("PointLight")
+	if light then
+		light.Color = Color3.fromRGB(255, 255, 255)
+		light.Brightness = 7
+		light.Range = 36
+	end
+
+	task.wait(0.75)
+	if not alive() or not orb.Parent then
+		return
+	end
+
+	local center = orb.Position
+	explosionFlash(center, 22, 700000)
+	shockwave(center, 12, 100, Color3.fromRGB(255, 255, 255), 0.9)
+	spawnSpinningWhiteSquares(center, math.random(26, 42))
+	applyLocalDamage(math.random(2, 5))
+	applyKnockback(hrp.Position - center, 90)
+
+	task.wait(0.35)
+	if orb.Parent then
+		orb.Color = Color3.fromRGB(255, 70, 70)
+		if light then
+			light.Color = Color3.fromRGB(255, 60, 60)
+			light.Brightness = 2.5
+			light.Range = 24
+		end
+	end
+end
+
+local function createApocalypseOrb(index: number)
+	local orb = mkPart(Vector3.new(10, 10, 10), hrp.CFrame, Color3.fromRGB(255, 70, 70), Enum.Material.Neon, true, false, 0.05)
+	orb.Shape = Enum.PartType.Ball
+
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 70, 70)
+	light.Range = 24
+	light.Brightness = 2.5
+	light.Parent = orb
+
+	local angle = index * (math.pi * 2 / 5)
+	local radius = 40 + (index % 3) * 10
+	local busy = false
+	local orbitLife = 0
+
+	local orbitConn: RBXScriptConnection?
+	orbitConn = RunService.Heartbeat:Connect(function(dt)
+		if not alive() or not orb.Parent or not hrp.Parent then
+			if orbitConn then
+				orbitConn:Disconnect()
+			end
+			if orb.Parent then
+				orb:Destroy()
+			end
+			return
+		end
+
+		orbitLife += dt
+		if not busy and currentPhase() == "Apocalypse" then
+			angle += dt * (0.55 + index * 0.05)
+			local y = 18 + math.sin(orbitLife * 2.2 + index) * 7
+			local pos = hrp.Position + Vector3.new(math.cos(angle) * radius, y, math.sin(angle) * radius)
+			orb.CFrame = CFrame.new(pos)
+			orb.Color = Color3.fromRGB(255, 70, 70)
+			light.Color = Color3.fromRGB(255, 70, 70)
+			light.Brightness = 2.5 + math.sin(orbitLife * 8) * 0.5
+		end
+	end)
+
+	table.insert(apocalypseOrbConnections, orbitConn)
+
+	task.spawn(function()
+		while alive() and orb.Parent do
+			if currentPhase() ~= "Apocalypse" then
+				task.wait(0.2)
+				continue
+			end
+
+			task.wait(0.9 + math.random() * 1.8)
+			if not alive() or not orb.Parent or currentPhase() ~= "Apocalypse" then
+				continue
+			end
+
+			busy = true
+			local choice = math.random(1, 3)
+
+			if choice == 1 then
+				apocalypseDashOrb(orb)
+			elseif choice == 2 then
+				apocalypseSpewOrb(orb)
+			else
+				apocalypseFreezeOrb(orb)
+			end
+
+			busy = false
 		end
 	end)
 end
 
-local function buildSatelliteNet()
-	for i = 1, 10 do
-		orbitingSatelliteSpawner(i)
+local function buildApocalypseOrbs()
+	if apocalypseOrbsBuilt then
+		return
+	end
+	apocalypseOrbsBuilt = true
+
+	for i = 1, 5 do
+		createApocalypseOrb(i)
 	end
 end
 
@@ -598,7 +875,7 @@ local function cameraShake(intensity: number, rate: number)
 	end)
 end
 
-local function screenFlash(color: Color3)
+local function screenChaos()
 	local blur = Instance.new("BlurEffect")
 	blur.Size = 0
 	blur.Parent = Lighting
@@ -607,7 +884,7 @@ local function screenFlash(color: Color3)
 	cc.Brightness = 0
 	cc.Contrast = 0
 	cc.Saturation = 0
-	cc.TintColor = color
+	cc.TintColor = Color3.fromRGB(255, 220, 200)
 	cc.Parent = Lighting
 
 	TweenService:Create(blur, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = 14 }):Play()
@@ -622,420 +899,58 @@ local function screenFlash(color: Color3)
 end
 
 local function warningHorn()
-	if hrp and hrp.Parent then
-		mkSound(SND.Horn, hrp, 1.1, 1, false)
-	end
+	mkSound(SND.Horn, hrp, 1.1, 1, false)
 end
 
 local function shriek()
-	if hrp and hrp.Parent then
-		mkSound(SND.Shriek, hrp, 1.0, 1 + math.random(-8, 8) / 100, false)
-	end
+	mkSound(SND.Shriek, hrp, 1.0, 1 + math.random(-8, 8) / 100, false)
 end
 
 local function wormBuzz()
-	if hrp and hrp.Parent then
-		mkSound(SND.Worm, hrp, 0.7, 0.85 + math.random() * 0.25, false)
-	end
+	mkSound(SND.Worm, hrp, 0.7, 0.85 + math.random() * 0.25, false)
 end
 
 local function localNukeSequence()
-	if not hrp or not hrp.Parent then
-		return
-	end
-
 	local pos = hrp.Position + Vector3.new(math.random(-14, 14), math.random(2, 8), math.random(-14, 14))
-	telegraphedExplosion(pos, 16, 600000, math.random(2, 5), 85, true)
-	task.delay(0.8, function()
-		if alive() then
-			mushroomCloud(pos)
-		end
-	end)
+	telegraphedMushroomExplosion(pos, 0.1, 0.7, math.random(2, 5), 85, 16, 600000)
 end
 
-local function whiteShardBurst(pos: Vector3)
-	for i = 1, 28 do
-		local shard = mkPart(
-			Vector3.new(0.7, 0.7, 0.7),
-			CFrame.new(pos),
-			Color3.fromRGB(255, 255, 255),
-			Enum.Material.Neon,
-			true,
-			false,
-			0
-		)
-		shard.Shape = Enum.PartType.Block
+local greenGui: ScreenGui? = nil
+local greenFrame: Frame? = nil
 
-		local dir = Vector3.new(
-			math.random(-100, 100) / 100,
-			math.random(20, 100) / 100,
-			math.random(-100, 100) / 100
-		)
-		if dir.Magnitude < 0.01 then
-			dir = Vector3.new(0, 1, 0)
-		end
-		dir = dir.Unit
+local function createShutdownFlash(isWin: boolean)
+	local flashColor = if isWin then Color3.fromRGB(0, 255, 80) else Color3.fromRGB(255, 0, 0)
 
-		local spin = Vector3.new(math.random(-20, 20), math.random(-20, 20), math.random(-20, 20))
-		local life = 0
-
-		local conn: RBXScriptConnection?
-		conn = RunService.Heartbeat:Connect(function(dt)
-			if not shard.Parent or not alive() then
-				if conn then
-					conn:Disconnect()
-				end
-				if shard.Parent then
-					shard:Destroy()
-				end
-				return
-			end
-
-			life += dt
-			shard.CFrame = shard.CFrame
-				* CFrame.new(dir * (90 * dt))
-				* CFrame.Angles(math.rad(spin.X * dt), math.rad(spin.Y * dt), math.rad(spin.Z * dt))
-
-			if hrp and hrp.Parent and (shard.Position - hrp.Position).Magnitude < 4 then
-				explosionFlash(shard.Position, 3, 55000)
-				applyLocalDamage(1)
-				if conn then
-					conn:Disconnect()
-				end
-				shard:Destroy()
-				return
-			end
-
-			if life > 1.35 then
-				explosionFlash(shard.Position, 2.5, 35000)
-				if conn then
-					conn:Disconnect()
-				end
-				shard:Destroy()
-			end
-		end)
-	end
-end
-
-local function apocalypseOrbSpew(origin: Vector3)
-	if not hrp or not hrp.Parent then
-		return
+	if greenGui then
+		greenGui:Destroy()
 	end
 
-	for i = 1, math.random(18, 28) do
-		task.delay((i - 1) * 0.03, function()
-			if not alive() or not hrp.Parent then
-				return
-			end
+	greenGui = Instance.new("ScreenGui")
+	greenGui.Name = "ShutdownFlashGui"
+	greenGui.IgnoreGuiInset = true
+	greenGui.ResetOnSpawn = false
+	greenGui.DisplayOrder = 999999
+	greenGui.Parent = PlayerGui
 
-			local offset = Vector3.new(
-				math.random(-4, 4),
-				math.random(-2, 4),
-				math.random(-4, 4)
-			)
-
-			local target = hrp.Position + Vector3.new(
-				math.random(-8, 8),
-				math.random(-2, 6),
-				math.random(-8, 8)
-			)
-
-			local c = Color3.fromRGB(
-				math.random(180, 255),
-				math.random(180, 255),
-				math.random(80, 255)
-			)
-
-			createProjectile(origin + offset, target, 115 + math.random(0, 50), math.random(1, 2), math.random(1, 4), c)
-		end)
-	end
-end
-
-local function spawnApocalypseOrbs()
-	if apocalypseBuilt or not hrp or not hrp.Parent then
-		return
-	end
-	apocalypseBuilt = true
-
-	for i = 1, 5 do
-		task.spawn(function()
-			if not hrp or not hrp.Parent then
-				return
-			end
-
-			local orb = mkPart(
-				Vector3.new(8, 8, 8),
-				hrp.CFrame * CFrame.new(
-					math.random(-120, 120),
-					math.random(18, 40),
-					math.random(-120, 120)
-				),
-				Color3.fromRGB(255, 30, 30),
-				Enum.Material.Neon,
-				true,
-				false,
-				0.05
-			)
-			orb.Shape = Enum.PartType.Ball
-
-			local light = Instance.new("PointLight")
-			light.Color = Color3.fromRGB(255, 35, 35)
-			light.Range = 28
-			light.Brightness = 2
-			light.Parent = orb
-
-			local ang = math.random() * math.pi * 2
-			local radius = 90 + i * 8
-			local state = "orbit"
-			local stateTime = 0
-			local nextAttack = 1.5 + math.random()
-			local dashTarget = orb.Position
-			local dashDuration = 1.15
-			local spewTimer = 0
-			local recoverTime = 0
-			local freezePulse = 0
-
-			local function setRed()
-				orb.Color = Color3.fromRGB(255, 30, 30)
-				light.Color = Color3.fromRGB(255, 40, 40)
-				light.Brightness = 2
-				orb.Transparency = 0.05
-				orb.Size = Vector3.new(8, 8, 8)
-			end
-
-			local function setWhite()
-				orb.Color = Color3.fromRGB(255, 255, 255)
-				light.Color = Color3.fromRGB(255, 255, 255)
-				light.Brightness = 5
-				orb.Transparency = 0
-				orb.Size = Vector3.new(10, 10, 10)
-			end
-
-			local function beginDash()
-				state = "dash"
-				stateTime = 0
-				dashDuration = 0.8 + math.random() * 0.6
-				dashTarget = hrp.Position + Vector3.new(
-					math.random(-8, 8),
-					math.random(-2, 6),
-					math.random(-8, 8)
-				)
-			end
-
-			local function beginSpew()
-				state = "spew"
-				stateTime = 0
-				spewTimer = 0
-			end
-
-			local function beginFreeze()
-				state = "freeze"
-				stateTime = 0
-				freezePulse = 0
-			end
-
-			local function returnToOrbit(delayBeforeNext: number)
-				state = "recover"
-				stateTime = 0
-				recoverTime = delayBeforeNext
-				setRed()
-			end
-
-			local conn: RBXScriptConnection?
-			conn = RunService.Heartbeat:Connect(function(dt)
-				if not alive() or not orb.Parent or not hrp.Parent then
-					if conn then
-						conn:Disconnect()
-					end
-					if orb.Parent then
-						orb:Destroy()
-					end
-					return
-				end
-
-				stateTime += dt
-
-				if state == "orbit" then
-					ang += dt * (0.75 + i * 0.06)
-					local orbitPos = hrp.Position + Vector3.new(
-						math.cos(ang) * radius,
-						math.sin(os.clock() * 1.8 + i) * 10 + 22,
-						math.sin(ang) * radius
-					)
-					orb.CFrame = CFrame.new(orbitPos) * CFrame.Angles(0, os.clock() * 1.5, 0)
-
-					local pulse = 0.85 + (math.sin(os.clock() * 6 + i) * 0.15)
-					orb.Size = Vector3.new(8, 8, 8) * pulse
-					light.Brightness = 1.5 + (math.sin(os.clock() * 8 + i) * 0.4)
-
-					nextAttack -= dt
-					if nextAttack <= 0 then
-						local choice = math.random(1, 3)
-						if choice == 1 then
-							beginDash()
-						elseif choice == 2 then
-							beginSpew()
-						else
-							beginFreeze()
-						end
-					end
-
-				elseif state == "dash" then
-					local dir = dashTarget - orb.Position
-					if dir.Magnitude < 0.001 then
-						dir = Vector3.new(0, 0, -1)
-					end
-					dir = dir.Unit
-
-					local speed = 150 + progress() * 70
-					orb.CFrame = CFrame.new(orb.Position + dir * speed * dt, hrp.Position)
-					orb.Color = Color3.fromRGB(255, 25, 25)
-					light.Color = Color3.fromRGB(255, 80, 40)
-					light.Brightness = 3
-
-					if (orb.Position - hrp.Position).Magnitude < 7 or stateTime >= dashDuration then
-						local hitPos = orb.Position
-						shockwave(hitPos, 8, 34, Color3.fromRGB(255, 140, 50), 0.35)
-						explosionFlash(hitPos, 12, 220000)
-						applyLocalDamage(math.random(1, 4))
-						applyKnockback(hrp.Position - hitPos, 85)
-						if math.random() < 0.45 then
-							mushroomCloud(hitPos)
-						end
-						returnToOrbit(1.0 + math.random() * 0.8)
-					end
-
-				elseif state == "spew" then
-					orb.Color = Color3.fromRGB(255, 35, 35)
-					light.Color = Color3.fromRGB(255, 80, 50)
-					light.Brightness = 3.2
-
-					spewTimer -= dt
-					if spewTimer <= 0 then
-						spewTimer = 0.06
-						apocalypseOrbSpew(orb.Position)
-					end
-
-					orb.CFrame = CFrame.new(orb.Position, hrp.Position)
-
-					if stateTime >= 1.1 then
-						returnToOrbit(0.8 + math.random() * 0.6)
-					end
-
-				elseif state == "freeze" then
-					freezePulse += dt
-					setWhite()
-					orb.CFrame = CFrame.new(orb.Position)
-
-					if freezePulse > 0.12 then
-						freezePulse = 0
-						orb.Size = Vector3.new(10, 10, 10) + Vector3.new(math.random(0, 3), math.random(0, 3), math.random(0, 3))
-					end
-
-					if stateTime >= 0.9 then
-						local hitPos = orb.Position
-						explosionFlash(hitPos, 22, 800000)
-						shockwave(hitPos, 10, 70, Color3.fromRGB(255, 255, 255), 0.55)
-						whiteShardBurst(hitPos)
-						mushroomCloud(hitPos)
-						applyLocalDamage(math.random(2, 6))
-						applyKnockback(hrp.Position - hitPos, 110)
-						returnToOrbit(1.2 + math.random() * 0.9)
-					end
-
-				elseif state == "recover" then
-					recoverTime -= dt
-					orb.Color = Color3.fromRGB(255, 30, 30)
-					light.Color = Color3.fromRGB(255, 40, 40)
-					light.Brightness = 2
-
-					local orbitPos = hrp.Position + Vector3.new(
-						math.cos(ang) * radius,
-						math.sin(os.clock() * 1.6 + i) * 9 + 20,
-						math.sin(ang) * radius
-					)
-					orb.CFrame = CFrame.new(orbitPos)
-
-					if recoverTime <= 0 then
-						state = "orbit"
-						stateTime = 0
-						nextAttack = 1.3 + math.random() * 1.7
-					end
-				end
-			end)
-		end)
-	end
-end
-
-local function createGreenFlash()
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "ShutdownFlashGui"
-	gui.IgnoreGuiInset = true
-	gui.ResetOnSpawn = false
-	gui.DisplayOrder = 999999
-	gui.Parent = PlayerGui
-
-	local frame = Instance.new("Frame")
-	frame.Size = UDim2.fromScale(1, 1)
-	frame.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-	frame.BackgroundTransparency = 1
-	frame.BorderSizePixel = 0
-	frame.Parent = gui
+	greenFrame = Instance.new("Frame")
+	greenFrame.Size = UDim2.fromScale(1, 1)
+	greenFrame.BackgroundColor3 = flashColor
+	greenFrame.BackgroundTransparency = 1
+	greenFrame.BorderSizePixel = 0
+	greenFrame.Parent = greenGui
 
 	local stroke = Instance.new("UIStroke")
 	stroke.Thickness = 0
 	stroke.Transparency = 1
-	stroke.Parent = frame
+	stroke.Parent = greenFrame
 
-	TweenService:Create(frame, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+	TweenService:Create(greenFrame, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		BackgroundTransparency = 0.2,
 	}):Play()
 
 	task.delay(0.12, function()
-		if frame and frame.Parent then
-			TweenService:Create(frame, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-				BackgroundTransparency = 1,
-			}):Play()
-		end
-	end)
-
-	Debris:AddItem(gui, 1.2)
-end
-
-local redGui: ScreenGui? = nil
-local redFrame: Frame? = nil
-
-local function createRedFlash()
-	if redGui then
-		redGui:Destroy()
-	end
-
-	redGui = Instance.new("ScreenGui")
-	redGui.Name = "ShutdownFlashGui"
-	redGui.IgnoreGuiInset = true
-	redGui.ResetOnSpawn = false
-	redGui.DisplayOrder = 999999
-	redGui.Parent = PlayerGui
-
-	redFrame = Instance.new("Frame")
-	redFrame.Size = UDim2.fromScale(1, 1)
-	redFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-	redFrame.BackgroundTransparency = 1
-	redFrame.BorderSizePixel = 0
-	redFrame.Parent = redGui
-
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 0
-	stroke.Transparency = 1
-	stroke.Parent = redFrame
-
-	TweenService:Create(redFrame, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 0.2,
-	}):Play()
-
-	task.delay(0.12, function()
-		if redFrame and redFrame.Parent then
-			TweenService:Create(redFrame, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		if greenFrame and greenFrame.Parent then
+			TweenService:Create(greenFrame, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 				BackgroundTransparency = 1,
 			}):Play()
 		end
@@ -1064,12 +979,19 @@ local function cleanupAll()
 	end
 	table.clear(connections)
 
+	for _, conn in ipairs(apocalypseOrbConnections) do
+		pcall(function()
+			conn:Disconnect()
+		end)
+	end
+	table.clear(apocalypseOrbConnections)
+
 	stopAllMusic()
 
-	if redGui then
-		redGui:Destroy()
-		redGui = nil
-		redFrame = nil
+	if greenGui then
+		greenGui:Destroy()
+		greenGui = nil
+		greenFrame = nil
 	end
 
 	if chaosFolder and chaosFolder.Parent then
@@ -1081,7 +1003,7 @@ local function cleanupAll()
 	end
 end
 
-local function beginShutdown(isWin: boolean?)
+local function beginShutdown(isWin: boolean)
 	if shuttingDown then
 		return
 	end
@@ -1089,12 +1011,7 @@ local function beginShutdown(isWin: boolean?)
 	running = false
 
 	stopAllMusic()
-
-	if isWin then
-		createGreenFlash()
-	else
-		createRedFlash()
-	end
+	createShutdownFlash(isWin)
 
 	task.delay(0.55, function()
 		cleanupAll()
@@ -1105,9 +1022,8 @@ track(humanoid.Died:Connect(function()
 	beginShutdown(false)
 end))
 
-screenFlash(Color3.fromRGB(255, 220, 200))
+screenChaos()
 cameraShake(0.035, 10)
-buildSatelliteNet()
 warningHorn()
 
 track(RunService.RenderStepped:Connect(function()
@@ -1118,8 +1034,8 @@ track(RunService.RenderStepped:Connect(function()
 	local phase = currentPhase()
 	playPhaseMusic(phase)
 
-	if phase == "Apocalypse" and not apocalypseBuilt then
-		spawnApocalypseOrbs()
+	if phase == "Apocalypse" then
+		buildApocalypseOrbs()
 	end
 end))
 
@@ -1134,6 +1050,10 @@ task.spawn(function()
 		local phase = currentPhase()
 		playPhaseMusic(phase)
 
+		if phase == "Apocalypse" then
+			buildApocalypseOrbs()
+		end
+
 		if p < 0.20 then
 			if math.random() < 0.5 then
 				wormBuzz()
@@ -1141,7 +1061,6 @@ task.spawn(function()
 			if math.random() < 0.25 then
 				orbitingSatelliteSpawner(math.random(1, 10))
 			end
-
 		elseif p < 0.45 then
 			if math.random() < 0.45 then
 				createCubeDrone(
@@ -1161,7 +1080,6 @@ task.spawn(function()
 					0.5
 				)
 			end
-
 		elseif p < 0.75 then
 			if math.random() < 0.65 then
 				swarmOfCubes(math.random(4, 10))
@@ -1175,40 +1093,27 @@ task.spawn(function()
 			if math.random() < 0.25 then
 				shriek()
 			end
-
 		else
-			if math.random() < 0.7 then
+			if math.random() < 0.8 then
 				swarmOfCubes(math.random(8, 18))
 			end
-			if math.random() < 0.65 then
+			if math.random() < 0.75 then
 				missileRing(math.random(10, 18))
 			end
-			if math.random() < 0.55 then
+			if math.random() < 0.75 then
 				missileStorm()
 			end
-			if math.random() < 0.45 then
+			if math.random() < 0.6 then
 				explosionRain()
 			end
-
-			-- This used to be unfair instant-on-player nukes.
-			-- Now it always telegraphs with the red/yellow flashing ball first.
-			if math.random() < 0.5 then
+			if math.random() < 0.45 then
 				localNukeSequence()
-			end
-
-			if math.random() < 0.35 then
-				local pos = hrp.Position + Vector3.new(math.random(-16, 16), math.random(4, 14), math.random(-16, 16))
-				telegraphedExplosion(pos, 18, 420000, math.random(2, 6), 90, true)
-			end
-
-			if math.random() < 0.28 then
-				shriek()
 			end
 		end
 
 		if p > 0.85 and math.random() < 0.22 then
 			local pos = hrp.Position + Vector3.new(math.random(-20, 20), math.random(6, 18), math.random(-20, 20))
-			mushroomCloud(pos)
+			telegraphedMushroomExplosion(pos, 0.1, 0.7, math.random(2, 5), 90, 18, 650000)
 		end
 	end
 end)
@@ -1243,7 +1148,12 @@ task.spawn(function()
 		local p = progress()
 		local pos = hrp.Position + Vector3.new(math.random(-12, 12), math.random(-1, 10), math.random(-12, 12))
 		if p > 0.5 then
-			telegraphedExplosion(pos, 10 + math.floor(p * 7), 120000 + math.floor(p * 200000), 1 + math.floor(p * 3), 35, false)
+			warningMarker(pos, 0.35)
+			task.delay(0.35, function()
+				if alive() then
+					explosionFlash(pos, 6 + math.floor(p * 7), 120000 + math.floor(p * 200000))
+				end
+			end)
 		end
 
 		if p > 0.75 and math.random() < 0.35 then
