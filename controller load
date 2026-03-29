@@ -19,7 +19,7 @@ end
 
 -- ONLY "Test"
 local function runCommand()
-	safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/Test")
+	safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/refs/heads/main/Test")
 end
 
 local function setupCharacter(plr, char)
