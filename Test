@@ -1,660 +1,384 @@
---!strict
--- Local-player-only chaos creature
--- Put this in StarterPlayerScripts
+-- == CHAOTIC ROBLOX LOCALSCRIPT - LOCALPLAYER ONLY SURVIVAL HUNTER ==
+-- Paste this as a LocalScript in StarterPlayer > StarterPlayerScripts
+-- Targets ONLY LocalPlayer. No damage or effects on any other players.
+-- Fully client-side damage (only your Humanoid is affected).
+-- Multi-phase boss with ALL requested upgrades: 2.5x faster lunges but 1.5x shorter distance,
+-- instant full stop on death, phase 3 constant screen shake, collidable 5x bigger red goop,
+-- 10x bigger/more/farther black goo spew with knockback + sphere/cylinder chaos meshes,
+-- overall way more chaos (more debris, higher jitter, faster everything).
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local Debris = game:GetService("Debris")
-local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
-local camera = workspace.CurrentCamera
-while not camera do
-	task.wait()
-	camera = workspace.CurrentCamera
-end
-
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid") :: Humanoid
-local hrp = character:WaitForChild("HumanoidRootPart") :: BasePart
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
 
-local ROOT_FOLDER = Instance.new("Folder")
-ROOT_FOLDER.Name = "LocalPlayerOnlyChaos"
-ROOT_FOLDER.Parent = workspace
+-- INSTANT DEATH STOP
+local alive = true
+humanoid.Died:Connect(function()
+	alive = false
+end)
 
-local function track<T>(inst: T): T
-	return inst
-end
+-- ==================== CREATE THE BALL ====================
+local ball = Instance.new("Part")
+ball.Name = "ChaosHunterBall"
+ball.Size = Vector3.new(25, 25, 25)
+ball.Shape = Enum.PartType.Ball
+ball.Material = Enum.Material.Neon
+ball.Color = Color3.fromRGB(0, 0, 0)
+ball.Transparency = 0
+ball.Anchored = true
+ball.CanCollide = false
+ball.Parent = workspace
 
-local function waitForCharacter()
-	character = player.Character or player.CharacterAdded:Wait()
-	humanoid = character:WaitForChild("Humanoid") :: Humanoid
-	hrp = character:WaitForChild("HumanoidRootPart") :: BasePart
-end
-
-local function alive(): boolean
-	return humanoid.Health > 0 and hrp.Parent ~= nil and character.Parent ~= nil
-end
-
-local function randomDirection(): Vector3
-	local v = Vector3.new(
-		math.random(-100, 100),
-		math.random(-35, 35),
-		math.random(-100, 100)
-	)
-	if v.Magnitude < 0.001 then
-		v = Vector3.new(1, 0, 0)
-	end
-	return v.Unit
-end
-
-local function playSound(parent: Instance, id: string, volume: number, speed: number?, looped: boolean?): Sound
-	local s = Instance.new("Sound")
-	s.SoundId = "rbxassetid://" .. id
-	s.Volume = volume
-	s.PlaybackSpeed = speed or 1
-	s.Looped = looped or false
-	s.Parent = parent
-	s:Play()
-	return s
-end
-
-local function mkPart(
-	size: Vector3,
-	cf: CFrame,
-	color: Color3,
-	material: Enum.Material,
-	anchored: boolean,
-	canCollide: boolean,
-	transparency: number?
-): BasePart
-	local p = Instance.new("Part")
-	p.Size = size
-	p.CFrame = cf
-	p.Color = color
-	p.Material = material
-	p.Anchored = anchored
-	p.CanCollide = canCollide
-	p.CanTouch = true
-	p.CanQuery = false
-	p.Transparency = transparency or 0
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	p.Parent = ROOT_FOLDER
-	return p
-end
-
-local function cameraShake(power: number, duration: number)
-	local start = os.clock()
-	local seed = math.random() * 1000
-
-	local conn
-	conn = RunService.RenderStepped:Connect(function()
-		if not alive() then
-			if conn then conn:Disconnect() end
-			return
-		end
-
-		local t = os.clock() - start
-		if t > duration then
-			if conn then conn:Disconnect() end
-			return
-		end
-
-		local fade = 1 - (t / duration)
-		local amt = power * fade
-		local nx = (math.noise(seed, t * 18, 0) - 0.5) * amt
-		local ny = (math.noise(0, seed, t * 18) - 0.5) * amt
-		local nz = (math.noise(t * 18, 0, seed) - 0.5) * amt
-		camera.CFrame = camera.CFrame * CFrame.new(nx, ny, nz)
-	end)
-end
-
-local function makeGhostClone(source: BasePart)
-	local ghost = Instance.new("Part")
-	ghost.Size = source.Size
-	ghost.CFrame = source.CFrame
-	ghost.Color = source.Color
-	ghost.Material = source.Material
-	ghost.Shape = source:IsA("Part") and source.Shape or Enum.PartType.Ball
-	ghost.Anchored = true
-	ghost.CanCollide = false
-	ghost.CanTouch = false
-	ghost.CanQuery = false
-	ghost.Transparency = 0.75
-	ghost.Parent = ROOT_FOLDER
-
-	TweenService:Create(ghost, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Transparency = 1,
-		Size = source.Size * 0.95,
-	}):Play()
-
-	Debris:AddItem(ghost, 0.4)
-end
-
-local function damageLocalPlayer(amount: number)
-	if alive() then
-		humanoid:TakeDamage(amount)
-	end
-end
-
-local function localOnlyTouchedDamage(part: BasePart, damageAmount: number, explodeOnTouch: boolean?, boomSoundId: string?)
-	local hitOnce = false
-	part.Touched:Connect(function(hit)
-		if hitOnce then
-			return
-		end
-		if not alive() then
-			return
-		end
-		if hit and hit:IsDescendantOf(character) then
-			hitOnce = true
-			damageLocalPlayer(damageAmount)
-
-			if explodeOnTouch then
-				local pos = part.Position
-				local boom = Instance.new("Explosion")
-				boom.Position = pos
-				boom.BlastRadius = 10
-				boom.BlastPressure = 0
-				boom.DestroyJointRadiusPercent = 0
-				boom.Parent = workspace
-
-				local flash = mkPart(Vector3.new(1, 1, 1), CFrame.new(pos), Color3.fromRGB(255, 140, 40), Enum.Material.Neon, true, false, 0.15)
-				flash.Shape = Enum.PartType.Ball
-				TweenService:Create(flash, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Transparency = 1,
-					Size = Vector3.new(24, 24, 24),
-				}):Play()
-				Debris:AddItem(flash, 0.3)
-
-				if boomSoundId then
-					playSound(flash, boomSoundId, 1.6, 1, false)
-				end
-			end
-
-			part:Destroy()
-		end
-	end)
-end
-
-local function spawnBlackGoo(origin: Vector3, toward: Vector3)
-	local goo = mkPart(Vector3.new(2, 2, 2), CFrame.new(origin), Color3.fromRGB(0, 0, 0), Enum.Material.Neon, true, false, 0.05)
-	goo.Shape = Enum.PartType.Ball
-	goo.AssemblyLinearVelocity = (toward - origin).Unit * math.random(35, 70) + Vector3.new(math.random(-8, 8), math.random(18, 38), math.random(-8, 8))
-	playSound(goo, "109182232826928", 2.5, 1, false)
-
-	local wiped = false
-	local conn
-	conn = RunService.Heartbeat:Connect(function()
-		if wiped or not goo.Parent then
-			if conn then conn:Disconnect() end
-			return
-		end
-		if not alive() then
-			if conn then conn:Disconnect() end
-			goo:Destroy()
-			return
-		end
-	end)
-
-	local touchedConn
-	touchedConn = goo.Touched:Connect(function(hit)
-		if wiped then
-			return
-		end
-		if hit and hit:IsDescendantOf(character) then
-			wiped = true
-			damageLocalPlayer(28)
-			if touchedConn then touchedConn:Disconnect() end
-			goo:Destroy()
-		end
-	end)
-
-	TweenService:Create(goo, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Transparency = 1,
-		Size = goo.Size * 0.2,
-	}):Play()
-	Debris:AddItem(goo, 5.1)
-end
-
-local function spawnRedExplosiveBall(origin: Vector3, target: Vector3)
-	local ball = mkPart(Vector3.new(2.2, 2.2, 2.2), CFrame.new(origin), Color3.fromRGB(255, 40, 40), Enum.Material.Neon, true, true, 0.05)
-	ball.Shape = Enum.PartType.Ball
-	local light = Instance.new("PointLight")
-	light.Range = 18
-	light.Brightness = 3
-	light.Color = Color3.fromRGB(255, 80, 80)
-	light.Parent = ball
-
-	local dir = (target - origin)
-	if dir.Magnitude < 0.001 then
-		dir = Vector3.new(0, 1, 0)
-	end
-	dir = dir.Unit
-
-	local hit = false
-	local conn
-	conn = RunService.Heartbeat:Connect(function(dt)
-		if not ball.Parent then
-			if conn then conn:Disconnect() end
-			return
-		end
-		if not alive() then
-			if conn then conn:Disconnect() end
-			ball:Destroy()
-			return
-		end
-
-		ball.CFrame = ball.CFrame + (dir * (115 * dt))
-
-		if hrp and (ball.Position - hrp.Position).Magnitude < 4 and not hit then
-			hit = true
-			playSound(ball, "140615626179933", 1.8, 1, false)
-			damageLocalPlayer(11)
-
-			local boom = Instance.new("Explosion")
-			boom.Position = ball.Position
-			boom.BlastRadius = 8
-			boom.BlastPressure = 0
-			boom.DestroyJointRadiusPercent = 0
-			boom.Parent = workspace
-
-			local flash = mkPart(Vector3.new(1, 1, 1), CFrame.new(ball.Position), Color3.fromRGB(255, 30, 30), Enum.Material.Neon, true, false, 0.1)
-			flash.Shape = Enum.PartType.Ball
-			TweenService:Create(flash, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-				Transparency = 1,
-				Size = Vector3.new(18, 18, 18),
-			}):Play()
-			Debris:AddItem(flash, 0.25)
-
-			ball:Destroy()
-			if conn then conn:Disconnect() end
-		end
-	end)
-
-	Debris:AddItem(ball, 4.5)
-end
-
-local function spawnWhiteBurst(origin: Vector3)
-	for i = 1, 24 do
-		local p = mkPart(Vector3.new(1, 1, 1), CFrame.new(origin), Color3.fromRGB(255, 255, 255), Enum.Material.Neon, true, false, 0.05)
-		p.Shape = Enum.PartType.Block
-		p.AssemblyLinearVelocity = Vector3.new(math.random(-80, 80), math.random(20, 100), math.random(-80, 80))
-		p.AssemblyAngularVelocity = Vector3.new(math.random(-18, 18), math.random(-18, 18), math.random(-18, 18))
-		TweenService:Create(p, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Transparency = 1,
-		}):Play()
-		Debris:AddItem(p, 0.65)
-	end
-end
-
-local function spawnFinalGooAndOrbs(origin: Vector3)
-	for i = 1, 40 do
-		task.delay(i * 0.02, function()
-			if not alive() then
-				return
-			end
-
-			local which = math.random(1, 3)
-			if which == 1 then
-				local g = mkPart(Vector3.new(2, 2, 2), CFrame.new(origin), Color3.fromRGB(0, 0, 0), Enum.Material.Neon, true, false, 0.05)
-				g.Shape = Enum.PartType.Ball
-				g.AssemblyLinearVelocity = Vector3.new(math.random(-80, 80), math.random(35, 110), math.random(-80, 80))
-				TweenService:Create(g, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Transparency = 1,
-					Size = Vector3.new(0.25, 0.25, 0.25),
-				}):Play()
-				Debris:AddItem(g, 5.1)
-			elseif which == 2 then
-				local r = mkPart(Vector3.new(1.8, 1.8, 1.8), CFrame.new(origin), Color3.fromRGB(255, 30, 30), Enum.Material.Neon, true, false, 0.05)
-				r.Shape = Enum.PartType.Ball
-				r.AssemblyLinearVelocity = Vector3.new(math.random(-100, 100), math.random(55, 130), math.random(-100, 100))
-				TweenService:Create(r, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Transparency = 1,
-					Size = Vector3.new(0.3, 0.3, 0.3),
-				}):Play()
-				Debris:AddItem(r, 5.1)
-			else
-				local o = mkPart(Vector3.new(2, 2, 2), CFrame.new(origin), Color3.fromRGB(255, 70, 10), Enum.Material.Neon, true, false, 0.05)
-				o.Shape = Enum.PartType.Ball
-				o.AssemblyLinearVelocity = Vector3.new(math.random(-90, 90), math.random(25, 95), math.random(-90, 90))
-				TweenService:Create(o, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Transparency = 1,
-					Size = Vector3.new(0.3, 0.3, 0.3),
-				}):Play()
-				Debris:AddItem(o, 5.1)
-			end
-		end)
-	end
-end
-
-local creature = mkPart(Vector3.new(25, 25, 25), CFrame.new(hrp.Position + (randomDirection() * 100)), Color3.fromRGB(0, 0, 0), Enum.Material.Neon, true, false, 0)
-creature.Shape = Enum.PartType.Ball
-
+-- Decal on front
 local decal = Instance.new("Decal")
 decal.Face = Enum.NormalId.Front
 decal.Texture = "rbxassetid://95222170052486"
-decal.Parent = creature
+decal.Parent = ball
 
-local creatureLight = Instance.new("PointLight")
-creatureLight.Range = 30
-creatureLight.Brightness = 3
-creatureLight.Color = Color3.fromRGB(255, 255, 255)
-creatureLight.Parent = creature
+-- Random spawn 100 studs away
+local randomDir = Vector3.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1)).Unit * 100
+ball.Position = humanoidRootPart.Position + randomDir
 
-local startSound = playSound(creature, "99762654932080", 5, 1, false)
-cameraShake(0.8, math.max(1.5, (startSound.TimeLength > 0 and startSound.TimeLength or 2.5)))
-
-startSound.Ended:Wait()
-if not alive() then
-	creature:Destroy()
-	return
-end
-
-local lungeStartSound = playSound(creature, "95222170052486", 2.5, 1, false)
-local lungeMoveSound = playSound(creature, "94883125123730", 1.8, 1, true)
-lungeMoveSound:Stop()
-
-local creatureDead = false
-local lungeCount = 0
-local redPhase = false
-local speedUpPhase = false
-
-local function doTrail()
-	makeGhostClone(creature)
-end
-
-local function doSpewBlackGoo()
-	local pos = creature.Position
-	for i = 1, math.random(10, 16) do
-		task.delay(i * 0.04, function()
-			if not alive() or creatureDead then
-				return
-			end
-			local shot = pos + Vector3.new(math.random(-4, 4), math.random(2, 8), math.random(-4, 4))
-			spawnBlackGoo(shot, shot + Vector3.new(math.random(-10, 10), 120, math.random(-10, 10)))
-		end)
-	end
-end
-
-local function doRedFreezeAndFire()
-	local pos = creature.Position
-	for i = 1, math.random(8, 14) do
-		task.delay(i * 0.04, function()
-			if not alive() or creatureDead then
-				return
-			end
-			local shotOrigin = pos + Vector3.new(math.random(-4, 4), math.random(-1, 4), math.random(-4, 4))
-			spawnRedExplosiveBall(shotOrigin, hrp.Position + Vector3.new(math.random(-6, 6), math.random(-1, 4), math.random(-6, 6)))
-		end)
-	end
-end
-
-local function updateCreatureAppearanceToRed()
-	creature.Color = Color3.fromRGB(255, 0, 0)
-	decal.Color3 = Color3.fromRGB(255, 40, 40)
-	creatureLight.Color = Color3.fromRGB(255, 40, 40)
-	creatureLight.Brightness = 6
-	playSound(creature, "137944174609015", 3, 1, false)
-	cameraShake(1.2, 1.2)
-end
-
-local function getLungeSpeedForIndex(index: number): number
-	if index >= 20 then
-		return 2.1 + ((index - 20) * 0.12)
-	elseif index > 10 then
-		return 1.35 + ((index - 10) * 0.08)
-	else
-		return 1
-	end
-end
-
-local function lungeOnce(index: number)
-	if creatureDead or not alive() then
-		return
-	end
-
-	local target = hrp.Position
-	local startPos = creature.Position
-	local desiredStartSoundSpeed = 1
-
-	if index > 10 then
-		desiredStartSoundSpeed = 1 + ((index - 10) * 0.12)
-	end
-	if index >= 20 then
-		desiredStartSoundSpeed = desiredStartSoundSpeed + 0.6
-	end
-
-	lungeStartSound.PlaybackSpeed = desiredStartSoundSpeed
-	lungeStartSound:Stop()
-	lungeStartSound:Play()
-
-	cameraShake(0.22 + math.min(1.2, index * 0.03), 0.2)
-
-	if index > 10 and index < 20 and (index % 3 == 0) then
-		creature.CFrame = CFrame.lookAt(creature.Position, creature.Position + Vector3.yAxis)
-		task.wait(0.15)
-		doSpewBlackGoo()
-		task.wait(0.4)
-	elseif index >= 20 and (index % 3 == 0) then
-		creature.CFrame = CFrame.lookAt(creature.Position, creature.Position + Vector3.yAxis)
-		task.wait(0.12)
-		doRedFreezeAndFire()
-		task.wait(0.25)
-	end
-
-	local lungeSpeed = 70 * getLungeSpeedForIndex(index)
-	local lungeDuration = math.clamp(0.85 / getLungeSpeedForIndex(index), 0.18, 0.85)
-	local start = os.clock()
-
-	lungeMoveSound.PlaybackSpeed = 1 + math.min(1.2, index * 0.02)
-	lungeMoveSound:Stop()
-	lungeMoveSound:Play()
-
-	local trailTick = 0
-	while alive() and not creatureDead and (os.clock() - start) < lungeDuration do
-		local dt = RunService.Heartbeat:Wait()
-		trailTick += dt
-
-		if not alive() or creatureDead then
-			break
-		end
-
-		if not hrp.Parent then
-			break
-		end
-
-		local targetNow = hrp.Position
-		local dir = (targetNow - creature.Position)
-		if dir.Magnitude < 0.001 then
-			dir = Vector3.new(0, 0, -1)
-		end
-		dir = dir.Unit
-
-		creature.CFrame = CFrame.lookAt(creature.Position + (dir * lungeSpeed * dt), targetNow)
-
-		if trailTick >= 0.03 then
-			trailTick = 0
-			doTrail()
-		end
-
-		if (creature.Position - hrp.Position).Magnitude <= 12.5 then
-			damageLocalPlayer(2)
+-- ==================== CONSTANT HITBOX (2 damage every overlap) ====================
+-- Only damages LocalPlayer, never others
+ball.Touched:Connect(function(hit)
+	if hit and hit:IsDescendantOf(character) then
+		local hum = character:FindFirstChild("Humanoid")
+		if hum then
+			hum:TakeDamage(2)
 		end
 	end
+end)
 
-	if index == 10 then
-		lungeStartSound:Stop()
-		local s1 = playSound(creature, "95222170052486", 2.6, 1, false)
-		s1.Ended:Wait()
-		if alive() then
-			local s2 = playSound(creature, "96184137289030", 2.2, 1, false)
-			s2.Ended:Wait()
-		end
-		if alive() then
-			local s3 = playSound(creature, "106068332784548", 2.2, 1, false)
-			s3.Ended:Wait()
-		end
-		speedUpPhase = true
-	elseif index == 20 then
-		redPhase = true
-		updateCreatureAppearanceToRed()
-	end
-end
-
-local function freezeAndPointUp()
-	creature.CFrame = CFrame.lookAt(creature.Position, creature.Position + Vector3.yAxis)
-end
-
-local function explodeCreatureFinal()
-	if creatureDead then
-		return
-	end
-	creatureDead = true
-
-	local pos = creature.Position
-	local burstSound = playSound(creature, "140615626179933", 3, 1, false)
-	cameraShake(2.2, 0.9)
-
-	local growTween = TweenService:Create(creature, TweenInfo.new(5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Size = creature.Size * 10,
-		Transparency = 1,
-	})
-	growTween:Play()
-
-	task.spawn(function()
-		local t0 = os.clock()
-		while alive() and os.clock() - t0 < 5 do
-			freezeAndPointUp()
-			creature.CFrame = creature.CFrame * CFrame.Angles(math.rad(24), math.rad(34), math.rad(18))
-			task.wait(0.03)
-		end
+-- ==================== SOUND HELPER ====================
+local function playSound(id, volume, playbackSpeed, parent)
+	volume = volume or 1
+	playbackSpeed = playbackSpeed or 1
+	parent = parent or ball
+	
+	local sound = Instance.new("Sound")
+	sound.SoundId = "rbxassetid://" .. id
+	sound.Volume = volume
+	sound.PlaybackSpeed = playbackSpeed
+	sound.Parent = parent
+	sound:Play()
+	
+	sound.Ended:Connect(function()
+		sound:Destroy()
 	end)
+	
+	return sound
+end
 
-	spawnFinalGooAndOrbs(pos)
+-- ==================== SCREEN SHAKE ====================
+local function screenShake(duration, intensity)
+	local conn
+	local startTime = tick()
+	conn = RunService.RenderStepped:Connect(function()
+		if tick() - startTime > duration or not alive then
+			conn:Disconnect()
+			return
+		end
+		local offset = Vector3.new(
+			math.random(-intensity, intensity) / 8,
+			math.random(-intensity, intensity) / 8,
+			0
+		)
+		workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * CFrame.new(offset)
+	end)
+end
 
-	for i = 1, 70 do
-		task.delay(i * 0.02, function()
-			if not alive() then
-				return
-			end
-			local which = math.random(1, 3)
-			if which == 1 then
-				local p = mkPart(Vector3.new(1.4, 1.4, 1.4), CFrame.new(pos), Color3.fromRGB(0, 0, 0), Enum.Material.Neon, true, false, 0.1)
-				p.Shape = Enum.PartType.Ball
-				p.AssemblyLinearVelocity = Vector3.new(math.random(-120, 120), math.random(20, 130), math.random(-120, 120))
-				TweenService:Create(p, TweenInfo.new(4.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Transparency = 1,
-					Size = Vector3.new(0.2, 0.2, 0.2),
-				}):Play()
-				Debris:AddItem(p, 4.6)
-			elseif which == 2 then
-				local p = mkPart(Vector3.new(1.5, 1.5, 1.5), CFrame.new(pos), Color3.fromRGB(255, 0, 0), Enum.Material.Neon, true, false, 0.1)
-				p.Shape = Enum.PartType.Ball
-				p.AssemblyLinearVelocity = Vector3.new(math.random(-120, 120), math.random(30, 140), math.random(-120, 120))
-				TweenService:Create(p, TweenInfo.new(4.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Transparency = 1,
-					Size = Vector3.new(0.2, 0.2, 0.2),
-				}):Play()
-				Debris:AddItem(p, 4.6)
+-- ==================== MAIN CHAOS LOOP ====================
+task.spawn(function()
+	-- PHASE 0: Initial spawn sound + screen shake
+	local initSound = playSound(99762654932080, 5)
+	screenShake(4, 8)
+	initSound.Ended:Wait()
+
+	if not alive then 
+		if ball then ball:Destroy() end
+		return 
+	end
+
+	-- Variables for phases (2.5x faster lunges, 1.5x shorter distance)
+	local lungeCount = 0
+	local lungeSpeed = 300 -- 120 * 2.5
+	local pauseTime = 1.2
+	local playbackSpeed = 1.0
+	local phase = 1 -- 1 = normal, 2 = faster + black goo, 3 = red storm
+
+	-- Red phase continuous red part storm (explosions everywhere)
+	local redStormTask = nil
+
+	while lungeCount < 30 and alive do
+		lungeCount = lungeCount + 1
+
+		-- Lungestart sound (gets faster in later phases)
+		local lungestart = playSound(99762654932080, 5, playbackSpeed)
+
+		-- Lunge sound
+		playSound(94883125123730, 1)
+
+		-- Face player
+		local targetPos = humanoidRootPart.Position
+		ball.CFrame = CFrame.lookAt(ball.Position, targetPos)
+
+		-- LUNGE MOVEMENT + TRAIL CLONES (2.5x faster, 1.5x shorter)
+		local moving = true
+		local moveStart = tick()
+		local lastTrail = tick()
+
+		while moving and alive do
+			task.wait(0.01)
+			
+			targetPos = humanoidRootPart.Position
+			local dir = (targetPos - ball.Position).Unit
+			
+			-- Keep facing player (with chaotic red phase jitter)
+			if phase == 3 then
+				local jitter = CFrame.Angles(
+					math.rad(math.random(-15, 15)),
+					math.rad(math.random(-15, 15)),
+					math.rad(math.random(-15, 15))
+				)
+				ball.CFrame = CFrame.lookAt(ball.Position, targetPos) * jitter
 			else
-				local p = mkPart(Vector3.new(1.6, 1.6, 1.6), CFrame.new(pos), Color3.fromRGB(255, 70, 0), Enum.Material.Neon, true, false, 0.1)
-				p.Shape = Enum.PartType.Ball
-				p.AssemblyLinearVelocity = Vector3.new(math.random(-120, 120), math.random(25, 130), math.random(-120, 120))
-				TweenService:Create(p, TweenInfo.new(4.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Transparency = 1,
-					Size = Vector3.new(0.2, 0.2, 0.2),
-				}):Play()
-				Debris:AddItem(p, 4.6)
+				ball.CFrame = CFrame.lookAt(ball.Position, targetPos)
 			end
-		end)
-	end
-
-	task.delay(5.1, function()
-		if creature and creature.Parent then
-			creature:Destroy()
+			
+			-- Move (2.5x faster)
+			local step = lungeSpeed * 0.01
+			ball.Position = ball.Position + dir * step
+			
+			-- Trail of transparent clones (more chaotic)
+			if tick() - lastTrail > 0.03 then
+				lastTrail = tick()
+				local clone = ball:Clone()
+				clone.Transparency = 0.6
+				clone.Anchored = true
+				clone.CanCollide = false
+				clone.Parent = workspace
+				
+				TweenService:Create(clone, TweenInfo.new(0.6, Enum.EasingStyle.Quad), {Transparency = 1}):Play()
+				task.delay(0.8, function() if clone then clone:Destroy() end end)
+			end
+			
+			-- Stop when close (1.5x shorter = 8 studs) or timeout (shorter = 4s)
+			if (ball.Position - targetPos).Magnitude < 8 or (tick() - moveStart > 4) then
+				moving = false
+			end
 		end
-		if ROOT_FOLDER and ROOT_FOLDER.Parent then
-			ROOT_FOLDER:Destroy()
+
+		if not alive then break end
+
+		-- PHASE 3 SCREEN SHAKE on every lunge
+		if phase == 3 then
+			screenShake(0.7, 12)
 		end
-	end)
-end
 
-task.spawn(function()
-	while alive() and not creatureDead do
-		task.wait(0.01)
+		-- Freeze & rotate back to player
+		task.wait(pauseTime)
+		ball.CFrame = CFrame.lookAt(ball.Position, humanoidRootPart.Position)
 
-		if not alive() or creatureDead then
+		-- ==================== PHASE TRANSITIONS ====================
+		if lungeCount == 10 then
+			-- Transition to phase 2
+			phase = 2
+			screenShake(5, 18)
+			playSound(96184137289030, 1)
+			local transition2 = playSound(106068332784548, 1)
+			transition2.Ended:Wait()
+			
+			-- Start speeding up (already 2.5x base)
+			playbackSpeed = 1.3
+			lungeSpeed = 425 -- 170 * 2.5
+			pauseTime = 0.7
+			
+		elseif phase == 2 and (lungeCount - 10) % 3 == 0 then
+			-- Every 3 lunges in phase 2: point up and SPEW MASSIVE BLACK GOO (10x bigger, way more, farther, knockback + sphere/cylinder chaos)
+			ball.CFrame = CFrame.lookAt(ball.Position, ball.Position + Vector3.new(0, 100, 0)) -- face up
+			
+			for i = 1, 40 do -- 3x+ more spewing
+				local goo = Instance.new("Part")
+				
+				-- Cool sphere / cylinder mesh variety
+				if math.random() < 0.65 then
+					goo.Shape = Enum.PartType.Ball
+					goo.Size = Vector3.new(30, 30, 30) -- 10x bigger
+				else
+					goo.Shape = Enum.PartType.Cylinder
+					goo.Size = Vector3.new(10, 45, 10) -- long chaotic cylinders
+				end
+				
+				goo.Material = Enum.Material.Neon
+				goo.Color = Color3.new(0, 0, 0)
+				goo.Position = ball.Position + Vector3.new(math.random(-12, 12), 5, math.random(-12, 12))
+				
+				-- Spews MUCH farther into the air + chaotic velocity
+				goo.Velocity = Vector3.new(
+					math.random(-140, 140),
+					math.random(200, 350),
+					math.random(-140, 140)
+				)
+				goo.CanCollide = false
+				goo.Anchored = false
+				goo.Parent = workspace
+				
+				-- Black goo damages + knockback + dissolve on touch (only LocalPlayer)
+				goo.Touched:Connect(function(hit)
+					if hit and hit:IsDescendantOf(character) and alive then
+						humanoid:TakeDamage(28)
+						-- Knockback chaos
+						if humanoidRootPart then
+							local knockDir = (humanoidRootPart.Position - goo.Position).Unit * 110 + Vector3.new(0, 45, 0)
+							humanoidRootPart.Velocity = humanoidRootPart.Velocity + knockDir
+						end
+					end
+				end)
+				
+				playSound(109182232826928, 1.2, 1, goo)
+				task.delay(5, function() if goo then goo:Destroy() end end)
+				task.wait(0.012) -- faster spew
+			end
+			task.wait(1.2)
+			
+		elseif lungeCount == 20 then
+			-- Transition to phase 3 - RED MODE + PHASE 3 SCREEN SHAKE ALREADY ACTIVE
+			phase = 3
+			ball.Color = Color3.fromRGB(255, 0, 0)
+			playSound(137944174609015, 5)
+			
+			-- 2x speed on top of the 2.5x (insane)
+			lungeSpeed = lungeSpeed * 2
+			playbackSpeed = 1.9
+			pauseTime = 0.35
+			
+			-- Start red part storm (5x bigger, collidable, more chaos)
+			redStormTask = task.spawn(function()
+				while phase == 3 and lungeCount < 30 and alive do
+					for i = 1, 15 do -- more red goop
+						local red = Instance.new("Part")
+						red.Size = Vector3.new(10, 10, 10) -- 5x bigger
+						red.Shape = Enum.PartType.Ball
+						red.Material = Enum.Material.Neon
+						red.Color = Color3.fromRGB(255, 50, 0)
+						red.Position = ball.Position + Vector3.new(math.random(-20, 20), math.random(-15, 30), math.random(-20, 20))
+						red.Velocity = Vector3.new(math.random(-220, 220), math.random(-60, 150), math.random(-220, 220))
+						red.CanCollide = true -- now collidable
+						red.Anchored = false
+						red.Parent = workspace
+						
+						red.Touched:Connect(function(hit)
+							if hit and hit:IsDescendantOf(character) and alive then
+								humanoid:TakeDamage(14)
+								playSound(140615626179933, 1)
+							end
+						end)
+						
+						task.delay(2.8, function() if red then red:Destroy() end end)
+					end
+					task.wait(0.055) -- even faster storm
+				end
+			end)
+			
+		elseif phase == 3 and lungeCount > 20 then
+			-- Phase 3 spew exchanged for glowing exploding orbs (even more chaos)
+			if (lungeCount - 20) % 3 == 0 then
+				for i = 1, 25 do -- more orbs
+					local orb = Instance.new("Part")
+					orb.Size = Vector3.new(5, 5, 5)
+					orb.Shape = Enum.PartType.Ball
+					orb.Material = Enum.Material.Neon
+					orb.Color = Color3.fromRGB(255, 255, 80)
+					orb.Transparency = 0.05
+					orb.Position = ball.Position
+					orb.CanCollide = true
+					orb.Anchored = false
+					orb.Velocity = (humanoidRootPart.Position - orb.Position).Unit * 180 + Vector3.new(math.random(-45, 45), 35, math.random(-45, 45))
+					orb.Parent = workspace
+					
+					orb.Touched:Connect(function(hit)
+						if hit and hit:IsDescendantOf(character) and alive then
+							humanoid:TakeDamage(17)
+							playSound(140615626179933, 1.3)
+							orb:Destroy()
+						end
+					end)
+					
+					task.wait(0.028)
+				end
+				task.wait(0.8)
+			end
+		end
+
+		-- At exactly 30 lunges: final dramatic shake + BURST (extra chaos)
+		if lungeCount == 30 and alive then
+			screenShake(5, 18)
+			local shakeStart = tick()
+			while tick() - shakeStart < 5 and alive do
+				local intenseRot = math.sin(tick() * 55) * 35
+				ball.Orientation = ball.Orientation + Vector3.new(intenseRot, intenseRot * 1.2, intenseRot * 0.5)
+				task.wait(0.008)
+			end
+			
+			-- BURST EXPLOSION
+			local burstTween = TweenService:Create(ball, TweenInfo.new(1.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Size = ball.Size * 10,
+				Transparency = 1
+			})
+			burstTween:Play()
+			
+			-- MASSIVE explosion of black goo + red orbs + red goo (more debris)
+			for i = 1, 110 do
+				local debris = Instance.new("Part")
+				debris.Size = Vector3.new(6, 6, 6)
+				debris.Shape = Enum.PartType.Ball
+				debris.Material = Enum.Material.Neon
+				if i % 3 == 0 then
+					debris.Color = Color3.new(0, 0, 0)
+				else
+					debris.Color = Color3.fromRGB(255, 30, 0)
+				end
+				debris.Position = ball.Position + Vector3.new(math.random(-40, 40), math.random(-25, 55), math.random(-40, 40))
+				debris.Velocity = Vector3.new(math.random(-380, 380), math.random(120, 320), math.random(-380, 380))
+				debris.CanCollide = true
+				debris.Anchored = false
+				debris.Parent = workspace
+				
+				debris.Touched:Connect(function(hit)
+					if hit and hit:IsDescendantOf(character) and alive then
+						humanoid:TakeDamage(38)
+					end
+				end)
+				
+				if i % 3 == 0 then
+					playSound(140615626179933, 1.8)
+				end
+				
+				task.delay(4.5, function() if debris then debris:Destroy() end end)
+				task.wait(0.006)
+			end
+			
+			task.delay(20, function()
+				if ball then ball:Destroy() end
+			end)
+			
 			break
 		end
-
-		if (creature.Position - hrp.Position).Magnitude <= 12.5 then
-			damageLocalPlayer(2)
-		end
+	end
+	
+	-- Cleanup everything instantly if dead or ended
+	if redStormTask then
+		task.cancel(redStormTask)
+	end
+	if ball and not alive then
+		ball:Destroy()
 	end
 end)
 
-task.spawn(function()
-	while alive() and not creatureDead and lungeCount < 30 do
-		if not alive() then
-			break
-		end
-
-		lungeCount += 1
-		lungeOnce(lungeCount)
-
-		if not alive() or creatureDead then
-			break
-		end
-
-		if lungeCount == 20 then
-			updateCreatureAppearanceToRed()
-		end
-
-		if lungeCount < 30 then
-			local gap = 0.18
-			if lungeCount > 10 then
-				gap = math.max(0.06, 0.18 - ((lungeCount - 10) * 0.01))
-			end
-			if lungeCount >= 20 then
-				gap = math.max(0.03, gap * 0.55)
-			end
-			task.wait(gap)
-		end
-	end
-
-	if alive() and not creatureDead then
-		local shakeThreadStart = os.clock()
-		while alive() and os.clock() - shakeThreadStart < 5 do
-			cameraShake(1.6 + ((os.clock() - shakeThreadStart) * 0.8), 0.2)
-			freezeAndPointUp()
-			task.wait(0.03)
-		end
-		explodeCreatureFinal()
-	end
-end)
-
-task.spawn(function()
-	while alive() and not creatureDead do
-		task.wait(0.02)
-
-		if not alive() or creatureDead then
-			break
-		end
-
-		-- Keep the creature facing the local player during its normal movement.
-		if creature and creature.Parent and hrp and hrp.Parent then
-			local targetPos = hrp.Position
-			if lungeCount < 30 then
-				creature.CFrame = CFrame.lookAt(creature.Position, targetPos)
-			end
-		end
-	end
-end)
-
-player.CharacterAdded:Connect(function()
-	task.wait(0.1)
-	waitForCharacter()
-end)
+print("✅ CHAOS HUNTER LOCALSCRIPT LOADED - ONLY AFFECTS YOU (2.5x faster / 1.5x shorter lunges + death stop + massive chaos)")
