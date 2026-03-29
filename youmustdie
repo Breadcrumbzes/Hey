@@ -6,7 +6,7 @@
 -- instant full stop on death, phase 3 constant screen shake, collidable 5x bigger red goop,
 -- 10x bigger/more/farther black goo spew with knockback + sphere/cylinder chaos meshes,
 -- overall way more chaos (more debris, higher jitter, faster everything).
-
+print("hi")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -251,17 +251,18 @@ task.spawn(function()
 			-- Transition to phase 3 - RED MODE + PHASE 3 SCREEN SHAKE ALREADY ACTIVE
 			phase = 3
 			ball.Color = Color3.fromRGB(255, 0, 0)
-			playSound(137944174609015, 5)
+			local sound = playSound(137944174609015, 5)
+			sound.Looped = true
 			
 			-- 2x speed on top of the 2.5x (insane)
-			lungeSpeed = lungeSpeed * 2
+			lungeSpeed = lungeSpeed * 1.5
 			playbackSpeed = 1.9
 			pauseTime = 0.35
 			
 			-- Start red part storm (5x bigger, collidable, more chaos)
 			redStormTask = task.spawn(function()
 				while phase == 3 and lungeCount < 30 and alive do
-					for i = 1, 15 do -- more red goop
+					for i = 1, 3 do -- more red goop
 						local red = Instance.new("Part")
 						red.Size = Vector3.new(10, 10, 10) -- 5x bigger
 						red.Shape = Enum.PartType.Ball
@@ -280,7 +281,7 @@ task.spawn(function()
 							end
 						end)
 						
-						task.delay(2.8, function() if red then red:Destroy() end end)
+						task.delay(0.3), function() if red then red:Destroy() end end)
 					end
 					task.wait(0.055) -- even faster storm
 				end
