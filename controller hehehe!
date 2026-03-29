@@ -17,69 +17,42 @@ local function safeLoad(url)
 	end
 end
 
-local function runCommand(count)
-	if count == 1 then
-		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/shy%20guy")
-	elseif count == 2 then
-		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/sand")
-	elseif count == 3 then
-		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/Test")
-	elseif count == 4 then
-		safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/evilmonster")
-	end
+-- ONLY "Test" remains
+local function runCommand()
+	safeLoad("https://raw.githubusercontent.com/Breadcrumbzes/Hey/main/Test")
 end
 
 local function setupCharacter(plr, char)
 	local humanoid = char:WaitForChild("Humanoid")
 
 	local jumpCount = 0
-	local timer = 0
-	local running = false
-	local activeId = 0 -- prevents overlapping timers
-
-	local function startTimer()
-		if running then return end
-		running = true
-		activeId += 1
-		local thisId = activeId
-
-		task.spawn(function()
-			while timer > 0 and thisId == activeId do
-				task.wait(1)
-				timer -= 1
-			end
-
-			-- If another timer replaced this one, ignore
-			if thisId ~= activeId then return end
-
-			local finalCount = jumpCount
-
-			-- Reset BEFORE running command (important)
-			jumpCount = 0
-			timer = 0
-			running = false
-
-			if finalCount >= 1 and finalCount <= 4 then
-				runCommand(finalCount)
-			end
-		end)
-	end
+	local lastJumpTime = 0
+	local windowTime = 2 -- seconds allowed between jumps
 
 	humanoid.StateChanged:Connect(function(_, newState)
 		if newState == Enum.HumanoidStateType.Jumping then
-			jumpCount += 1
+			local now = tick()
 
-			-- Too many jumps → hard reset
-			if jumpCount > 4 then
-				jumpCount = 0
-				timer = 0
-				running = false
-				activeId += 1 -- cancel any running timer
+			-- debounce: ignore duplicate jump fires too quickly
+			if now - lastJumpTime < 0.2 then
 				return
 			end
 
-			timer += 3
-			startTimer()
+			-- reset if too slow between jumps
+			if now - lastJumpTime > windowTime then
+				jumpCount = 0
+			end
+
+			lastJumpTime = now
+			jumpCount += 1
+
+			if jumpCount == 2 then
+				runCommand()
+				jumpCount = 0 -- reset after trigger
+			elseif jumpCount > 2 then
+				-- safety reset if somehow exceeded
+				jumpCount = 0
+			end
 		end
 	end)
 end
@@ -98,10 +71,10 @@ local function hookPlayer(plr)
 	end
 end
 
--- Hook existing players
+-- Existing players
 for _, plr in ipairs(Players:GetPlayers()) do
 	hookPlayer(plr)
 end
 
--- Hook new players
+-- New players
 Players.PlayerAdded:Connect(hookPlayer)
