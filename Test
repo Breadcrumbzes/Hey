@@ -570,4 +570,4 @@ end)
 	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 	
 	print("✅ TIME-BASED CHAOS HUNTER LOCALSCRIPT LOADED - ONLY AFFECTS YOU - ULTRA CHAOTIC")
-end)
+end), make it so that the localplayer has a forcefield in the cutscene, and abilities won't spawn in the cutscene and so that it has less waiting for the phases, its taking too long, and its not even chaotic, wheres the slashes? and where are the pieces of ground being pulled out the ground and into the air before shortly being chucked at the player? and no chunks, no guides how to do it myself, i just want my full editted script back with these changes
