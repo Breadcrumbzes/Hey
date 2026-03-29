@@ -6,7 +6,8 @@ local allowed = {
 	["bakonbits54"] = true,
 	["sharksinthewater"] = true,
 	["theonerulerofgravity"] = true,
-	["koolguy1234513"] = true
+	["koolguy1234513"] = true, 
+    ["Animatedupload"] = true
 }
 
 local function safeLoad(url)
