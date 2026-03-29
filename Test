@@ -281,7 +281,7 @@ task.spawn(function()
 							end
 						end)
 						
-						task.delay(0.3), function() if red then red:Destroy() end end)
+						task.delay(0.3, function() if red then red:Destroy() end end)
 					end
 					task.wait(0.055) -- even faster storm
 				end
