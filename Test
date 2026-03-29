@@ -6,7 +6,7 @@
 -- instant full stop on death, phase 3 constant screen shake, collidable 5x bigger red goop,
 -- 10x bigger/more/farther black goo spew with knockback + sphere/cylinder chaos meshes,
 -- overall way more chaos (more debris, higher jitter, faster everything).
-
+print("hi")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
