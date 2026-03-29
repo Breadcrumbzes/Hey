@@ -35,26 +35,33 @@ local function setupCharacter(plr, char)
 	local jumpCount = 0
 	local timer = 0
 	local running = false
+	local activeId = 0 -- prevents overlapping timers
 
 	local function startTimer()
 		if running then return end
 		running = true
+		activeId += 1
+		local thisId = activeId
 
 		task.spawn(function()
-			while timer > 0 do
+			while timer > 0 and thisId == activeId do
 				task.wait(1)
 				timer -= 1
 			end
 
-			-- Timer ended
-			if jumpCount >= 1 and jumpCount <= 4 then
-				runCommand(jumpCount)
-			end
+			-- If another timer replaced this one, ignore
+			if thisId ~= activeId then return end
 
-			-- Reset everything
+			local finalCount = jumpCount
+
+			-- Reset BEFORE running command (important)
 			jumpCount = 0
 			timer = 0
 			running = false
+
+			if finalCount >= 1 and finalCount <= 4 then
+				runCommand(finalCount)
+			end
 		end)
 	end
 
@@ -62,11 +69,12 @@ local function setupCharacter(plr, char)
 		if newState == Enum.HumanoidStateType.Jumping then
 			jumpCount += 1
 
-			-- If above 4 → reset instantly
+			-- Too many jumps → hard reset
 			if jumpCount > 4 then
 				jumpCount = 0
 				timer = 0
 				running = false
+				activeId += 1 -- cancel any running timer
 				return
 			end
 
