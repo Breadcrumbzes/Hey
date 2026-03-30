@@ -210,7 +210,7 @@ screenGui.IgnoreGuiInset = true
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local tintFrame = trackInstance(Instance.new("Frame"))
-tintFrame.Size = UDim2.fromScale(1, 1)
+tintFrame.Size = UDim2.fromScale(2, 2)
 tintFrame.BackgroundTransparency = 1
 tintFrame.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
 tintFrame.BorderSizePixel = 0
@@ -283,7 +283,7 @@ local function createExplosion(pos, radius, damage, knockStrength, soundId, part
 	sphere.CanTouch = false
 	sphere.CanQuery = false
 	sphere.Parent = workspace
-
+    radius = radius * (1+ math.random)
 	local sphereTween = TweenService:Create(
 		sphere,
 		TweenInfo.new(isGiant and 1.2 or 0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
@@ -302,8 +302,6 @@ local function createExplosion(pos, radius, damage, knockStrength, soundId, part
 	particlePart.Transparency = 1
 	particlePart.Anchored = true
 	particlePart.CanCollide = false
-	particlePart.CanTouch = false
-	particlePart.CanQuery = false
 	particlePart.Position = pos
 	particlePart.Parent = workspace
 
@@ -360,7 +358,7 @@ local function fireProjectile(origin, direction, speed, lifetime, size, color3, 
 	bb.Adornee = projPart
 	bb.AlwaysOnTop = false
 	bb.LightInfluence = 0
-	bb.Size = UDim2.fromScale(giant and 260 or 200, giant and 260 or 200)
+	bb.Size = UDim2.fromScale(giant and 100 or 50, giant and 100 or 50)
 	bb.StudsOffsetWorldSpace = Vector3.zero
 	bb.MaxDistance = 100000
 	bb.Parent = projPart
@@ -502,14 +500,14 @@ local function swapMusic(id, volume)
 	musicSound = playSound(id, volume or 4.5, 1, workspace, true)
 end
 
-local function createOrbiters()
+local function createOrbiters(distance, color, biggeroffset, amount)
 	if orbitersSpawned then
 		return
 	end
 	orbitersSpawned = true
 	orbitersActive = true
 
-	for i = 1, 4 do
+	for i = 1, amount do
 		local orb = trackInstance(Instance.new("Part"))
 		orb.Name = "ChaosOrbiter"
 		orb.Size = Vector3.new(2.5, 2.5, 2.5)
@@ -518,15 +516,13 @@ local function createOrbiters()
 		orb.Transparency = 0.3
 		orb.Anchored = true
 		orb.CanCollide = false
-		orb.CanTouch = false
-		orb.CanQuery = false
 		orb.Parent = workspace
 
 		local orbBillboard = Instance.new("BillboardGui")
 		orbBillboard.Adornee = orb
-		orbBillboard.AlwaysOnTop = true
+		orbBillboard.AlwaysOnTop = false
 		orbBillboard.LightInfluence = 0
-		orbBillboard.Size = UDim2.fromOffset(220, 220)
+		orbBillboard.Size = UDim2.fromOffset(20, 20)
 		orbBillboard.StudsOffsetWorldSpace = Vector3.zero
 		orbBillboard.MaxDistance = 100000
 		orbBillboard.Parent = orb
@@ -535,32 +531,61 @@ local function createOrbiters()
 		orbImg.Size = UDim2.fromScale(1, 1)
 		orbImg.BackgroundTransparency = 1
 		orbImg.Image = "rbxassetid://954619039"
-		orbImg.ImageColor3 = Color3.fromRGB(200, 100, 255)
+		orbImg.ImageColor3 = color
 		orbImg.ScaleType = Enum.ScaleType.Fit
 		orbImg.Parent = orbBillboard
 
 		table.insert(orbiters, {
 			part = orb,
 			angle = (i - 1) * (math.pi * 2 / 4),
-			radius = 50,
+			radius = distance,
 			height = 8 + i * 2,
 			speed = 1.6 + i * 0.2,
 		})
 	end
 
+	-- 🔵 MOVEMENT LOOP
 	task.spawn(function()
-		while alive and orbitersActive and phase == 4 do
+		while alive and orbitersActive do
+			if not humanoidRootPart then
+				task.wait()
+				continue
+			end
+
 			for _, orbData in ipairs(orbiters) do
-				if not alive or phase ~= 4 or not orbData.part or not orbData.part.Parent then
-					break
+				if orbData.part and orbData.part.Parent then
+					orbData.angle += orbData.speed * 0.03
+
+					local offset = Vector3.new(
+						math.cos(orbData.angle) * orbData.radius,
+						orbData.height,
+						math.sin(orbData.angle) * orbData.radius
+					)
+
+					orbData.part.Position = humanoidRootPart.Position +biggeroffset + offset
 				end
+			end
+
+			task.wait()
+		end
+	end)
+
+	-- 🔴 SHOOTING LOOP
+	task.spawn(function()
+		while alive and orbitersActive and phase >= 4 do
+			for _, orbData in ipairs(orbiters) do
+				if not (orbData.part and orbData.part.Parent and humanoidRootPart) then
+					continue
+				end
+
 				task.wait(randf(1.2, 3))
+
 				if not alive or phase ~= 4 then
 					break
 				end
 
 				local orbPos = orbData.part.Position
-				local shootDir = safeUnit(humanoidRootPart.Position - orbPos, Vector3.new(0, 0, -1))
+				local shootDir = (humanoidRootPart.Position - orbPos).Unit
 
 				fireProjectile(
 					orbPos + shootDir * 4,
@@ -623,17 +648,18 @@ task.spawn(function()
 		-- Phase transitions
 		if elapsed >= 135 and phase < 5 then
 			phase = 5
-			currentSpeed = currentSpeed * 3
+			currentSpeed = currentSpeed * 5
 			hunter.Color = Color3.fromRGB(255, 255, 0)
 			hunterImage.ImageColor3 = Color3.fromRGB(255, 240, 100)
 
 			tintFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 100)
 			tintFrame.BackgroundTransparency = 0.4
 			TweenService:Create(tintFrame, TweenInfo.new(4, Enum.EasingStyle.Sine), { BackgroundTransparency = 1 }):Play()
+createOrbiters(10, Color3.fromRGB(105, 105, 0), Vector3.new(0,20,0), 10)
 
 			playSound(112455888640044, 6, 1, workspace, false)
 			swapMusic(112455888640044, 4.5)
-
+            
 		elseif elapsed >= 100 and phase < 4 then
 			phase = 4
 			currentSpeed = currentSpeed / 2
@@ -643,7 +669,7 @@ task.spawn(function()
 			TweenService:Create(tintFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { BackgroundTransparency = 1 }):Play()
 
 			swapMusic(128316165656141, 4.5)
-			createOrbiters()
+			createOrbiters(70, Color3.fromRGB(200, 100, 255), Vector3.new(0,10,0), 4)
 
 		elseif elapsed >= 50 and phase < 3 then
 			phase = 3
