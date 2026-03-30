@@ -196,7 +196,7 @@ task.spawn(function()
 		local elapsed = tick() - startTime
 
 		-- ==================== PHASE TRANSITIONS (SHORTER WAIT TIMES FOR FASTER CHAOS) ====================
-		if elapsed >= 75 and currentPhase < 5 then
+		if elapsed >= 120 and currentPhase < 5 then
 			currentPhase = 5
 			frozen = true
 			-- Final explosion phase
@@ -212,8 +212,8 @@ task.spawn(function()
 					task.wait(0.02)
 				end
 			end)
-			-- Explode into 50 large unanchored stone rocks
-			for i = 1, 50 do
+			-- Explode into 100 large unanchored stone rocks
+			for i = 1, 130 do
 				local rock = Instance.new("Part")
 				rock.Size = Vector3.new(math.random(6,14), math.random(6,14), math.random(6,14))
 				rock.Shape = Enum.PartType.Block
@@ -226,10 +226,10 @@ task.spawn(function()
 				rock.Parent = workspace
 				rock.Touched:Connect(function(hit)
 					if alive and hit:IsDescendantOf(character) then
-						humanoid:TakeDamage(22)
+						humanoid:TakeDamage(2)
 					end
 				end)
-				task.delay(6, function() if rock then rock:Destroy() end end)
+				task.delay(30, function() if rock then rock:Destroy() end end)
 				task.wait(0.005)
 			end
 			task.delay(1.5, function()
@@ -248,15 +248,13 @@ task.spawn(function()
 			end
 			faceDecal.Texture = "rbxassetid://120341831299080"
 			-- Freeze player character
-			humanoid.PlatformStand = true
-			humanoid.WalkSpeed = 0
-			humanoid.JumpPower = 0
+			humanoidRootPart.Anchored = true
 			-- Play special audio from hunter
 			playSound(140736374485942, 10, 1, hunter, false)
 			-- Camera cinematic tween (10 studs in front → 5 studs in front, facing hunter)
 			workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
 			local camStartPos = hunter.Position + hunter.CFrame.LookVector * 10
-			local camGoalPos = hunter.Position + hunter.CFrame.LookVector * 5
+			local camGoalPos = hunter.Position + hunter.CFrame.LookVector * 7
 			TweenService:Create(workspace.CurrentCamera, TweenInfo.new(5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
 				CFrame = CFrame.lookAt(camStartPos, hunter.Position)
 			}):Play()
@@ -276,6 +274,7 @@ task.spawn(function()
 				-- Chase speed *2x (even though frozen, for later logic)
 				currentSpeed = currentSpeed * 2
 				-- Rapid shake while frozen
+				humanoidRootPart.Anchored = false
 				task.spawn(function()
 					while alive and frozen do
 						hunter.Orientation = hunter.Orientation + Vector3.new(math.random(-35,35), math.random(-25,25), math.random(-20,20))
@@ -287,10 +286,10 @@ task.spawn(function()
 			-- CUTSCENE ENDS AFTER 12 SECONDS: UNFREEZE PLAYER + HUNTER + REMOVE FORCEFIELD + START ABILITIES
 			task.delay(12, function()
 				if not alive then return end
+				task.delay(2, function()
 				frozen = false
-				humanoid.PlatformStand = false
-				humanoid.WalkSpeed = 16
-				humanoid.JumpPower = 50
+				end)
+humanoid.Health = 300
 				if forceField then
 					forceField:Destroy()
 					forceField = nil
@@ -311,7 +310,7 @@ task.spawn(function()
 					orb.Touched:Connect(function(hit)
 						if cooldown > 0 or not alive then return end
 						if hit and hit:IsDescendantOf(character) then
-							humanoid:TakeDamage(25)
+							humanoid:TakeDamage(0.1)
 							orb.Transparency = 1
 							cooldown = 5
 							playSound(140615626179933, 2)
@@ -352,7 +351,7 @@ task.spawn(function()
 							orb.Parent = workspace
 							orb.Touched:Connect(function(hit)
 								if alive and hit:IsDescendantOf(character) then
-									humanoid:TakeDamage(18)
+									humanoid:TakeDamage(2)
 									orb:Destroy()
 								end
 							end)
@@ -371,7 +370,7 @@ task.spawn(function()
 							jet.Parent = workspace
 							jet.Touched:Connect(function(hit)
 								if alive and hit:IsDescendantOf(character) then
-									humanoid:TakeDamage(6)
+									humanoid:TakeDamage(3)
 								end
 							end)
 							task.delay(3, function() if jet then jet:Destroy() end end)
@@ -405,7 +404,7 @@ task.spawn(function()
 						orb.Touched:Connect(function(hit)
 							if not alive or blast then return end
 							if hit:IsDescendantOf(character) then
-								humanoid:TakeDamage(14)
+								humanoid:TakeDamage(5)
 								-- Expand into red blast with high knockback
 								blast = true
 								orb.Size = Vector3.new(12,12,12)
@@ -464,7 +463,7 @@ task.spawn(function()
 					visual.Anchored = true
 					visual.CanCollide = false
 					visual.Parent = workspace
-					TweenService:Create(visual, TweenInfo.new(0.4), {Transparency = 1, Size = Vector3.new(0,0,0)}):Play()
+					TweenService:Create(visual, TweenInfo.new(0.4), {Transparency = 1, Size = Vector3.new(0,0,35)}):Play()
 					task.delay(0.45, function() visual:Destroy() end)
 					-- Quick damage hitbox
 					local hb = visual:Clone()
@@ -474,7 +473,7 @@ task.spawn(function()
 					hb.Parent = workspace
 					hb.Touched:Connect(function(hit)
 						if alive and hit:IsDescendantOf(character) then
-							humanoid:TakeDamage(11)
+							humanoid:TakeDamage(0.6)
 						end
 					end)
 					task.delay(0.3, function() hb:Destroy() end)
@@ -490,7 +489,7 @@ task.spawn(function()
 			rayParams.FilterType = Enum.RaycastFilterType.Exclude
 			-- Ground attacks oriented around player with MORE distance (35 studs out)
 			local dir = Vector3.new(math.random(-1,1), 0, math.random(-1,1)).Unit * 35
-			local checkPos = humanoidRootPart.Position + dir + Vector3.new(0, 40, 0)
+			local checkPos = hunter.Position + dir + Vector3.new(0, -40, 0)
 			local rayResult = workspace:Raycast(checkPos, Vector3.new(0, -150, 0), rayParams)
 			if rayResult then
 				local groundMat = rayResult.Instance.Material
@@ -513,7 +512,7 @@ task.spawn(function()
 					rock.Touched:Connect(function(hit)
 						if not alive then return end
 						if hit:IsDescendantOf(character) then
-							humanoid:TakeDamage(9) -- LESS DAMAGE
+							humanoid:TakeDamage(0.9) -- LESS DAMAGE
 							rock:Destroy()
 							-- Bigger debris storm
 							for d = 1, 14 do
