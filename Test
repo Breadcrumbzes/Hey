@@ -1,828 +1,540 @@
--- == CHAOTIC ROBLOX LOCALSCRIPT - TIME-BASED MULTI-PHASE SURVIVAL HUNTER ==
+-- == CHAOTIC ROBLOX LOCALSCRIPT - TIME-BASED MULTI-PHASE SURVIVAL HUNTER == --
 -- Paste this as a LocalScript in StarterPlayer > StarterPlayerScripts
--- LocalPlayer only. Stops immediately on your death.
+-- 100% LOCALPLAYER ONLY. No effects or damage on any other players.
+-- Instantly ends + all sounds stop the moment YOU die.
+-- Constant chase + face. Super chaotic with tons of particles, debris, knockback, and overlapping attacks.
 
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local SoundService = game:GetService("SoundService")
-local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local camera = Workspace.CurrentCamera
+local humanoid = character:WaitForChild("Humanoid")
 
+-- SET HEALTH TO 300 AT START
+humanoid.MaxHealth = 300
+humanoid.Health = 300
+
+-- INSTANT DEATH CLEANUP
 local alive = true
-local activeSounds = {}
-local orbitingOrbs = {}
-local cutsceneForceField = nil
-
-local function setCharacterStats()
-	if character and humanoid then
-		humanoid.MaxHealth = 300
-		humanoid.Health = 300
-	end
-end
-
-setCharacterStats()
-
-local function stopAllSounds()
-	for _, s in ipairs(activeSounds) do
-		if s then
-			pcall(function()
-				s:Stop()
-				s:Destroy()
-			end)
-		end
-	end
-	table.clear(activeSounds)
-end
-
-local function playSound(id, volume, playbackSpeed, parent, loop)
-	volume = volume or 1
-	playbackSpeed = playbackSpeed or 1
-	parent = parent or Workspace
-
-	local sound = Instance.new("Sound")
-	sound.SoundId = "rbxassetid://" .. tostring(id)
-	sound.Volume = volume
-	sound.PlaybackSpeed = playbackSpeed
-	sound.Looped = loop or false
-	sound.Parent = parent
-	sound:Play()
-
-	table.insert(activeSounds, sound)
-
-	sound.Ended:Connect(function()
-		local idx = table.find(activeSounds, sound)
-		if idx then
-			table.remove(activeSounds, idx)
-		end
-		if sound then
-			sound:Destroy()
-		end
-	end)
-
-	return sound
-end
-
-local function randomHorizontalDirection()
-	local dirs = {
-		Vector3.new(1, 0, 0),
-		Vector3.new(-1, 0, 0),
-		Vector3.new(0, 0, 1),
-		Vector3.new(0, 0, -1),
-		Vector3.new(1, 0, 1),
-		Vector3.new(-1, 0, 1),
-		Vector3.new(1, 0, -1),
-		Vector3.new(-1, 0, -1),
-	}
-	return dirs[math.random(1, #dirs)]
-end
-
-local function screenShake(duration, intensity)
-	if not alive then
-		return
-	end
-
-	local start = tick()
-	local conn
-	conn = RunService.RenderStepped:Connect(function()
-		if not alive or not camera or tick() - start > duration then
-			if conn then
-				conn:Disconnect()
-			end
-			return
-		end
-
-		local offset = Vector3.new(
-			math.random(-intensity, intensity) / 8,
-			math.random(-intensity, intensity) / 8,
-			0
-		)
-
-		camera.CFrame = camera.CFrame * CFrame.new(offset)
-	end)
-end
-
-local function freezePlayer()
-	if not humanoid then
-		return
-	end
-	humanoid.PlatformStand = true
-	humanoid.WalkSpeed = 0
-	humanoid.JumpPower = 0
-	humanoid.AutoRotate = false
-end
-
-local function unfreezePlayer()
-	if not humanoid then
-		return
-	end
-	humanoid.PlatformStand = false
-	humanoid.WalkSpeed = 16
-	humanoid.JumpPower = 50
-	humanoid.AutoRotate = true
-end
-
-local function createCutsceneShield()
-	if cutsceneForceField then
-		cutsceneForceField:Destroy()
-	end
-	cutsceneForceField = Instance.new("ForceField")
-	cutsceneForceField.Visible = true
-	cutsceneForceField.Parent = character
-end
-
-local function removeCutsceneShield()
-	if cutsceneForceField then
-		cutsceneForceField:Destroy()
-		cutsceneForceField = nil
-	end
-end
+humanoid.Died:Connect(function()
+	alive = false
+end)
 
 -- ==================== CREATE THE HUNTER ====================
 local hunter = Instance.new("Part")
 hunter.Name = "ChaosHunter"
-hunter.Size = Vector3.new(5, 5, 5)
+hunter.Size = Vector3.new(6.5, 6.5, 6.5) -- smaller size as requested
 hunter.Shape = Enum.PartType.Block
 hunter.Material = Enum.Material.Plastic
 hunter.Color = Color3.fromRGB(255, 255, 255)
 hunter.Transparency = 0
 hunter.Anchored = true
 hunter.CanCollide = true
-hunter.Parent = Workspace
+hunter.Parent = workspace
 
+-- Starting face decal
 local faceDecal = Instance.new("Decal")
 faceDecal.Face = Enum.NormalId.Front
 faceDecal.Texture = "rbxassetid://107769019594430"
 faceDecal.Parent = hunter
 
-local spawnDirs = {
-	Vector3.new(1, 0, 0),
-	Vector3.new(-1, 0, 0),
-	Vector3.new(0, 0, 1),
-	Vector3.new(0, 0, -1),
-	Vector3.new(1, 0, 1),
-	Vector3.new(-1, 0, 1),
-	Vector3.new(1, 0, -1),
-	Vector3.new(-1, 0, -1),
-}
-local randomDir = spawnDirs[math.random(1, #spawnDirs)].Unit * 45
-hunter.Position = humanoidRootPart.Position + randomDir + Vector3.new(0, 8, 0)
-
--- ==================== INSTANT DEATH CLEANUP ====================
-humanoid.Died:Connect(function()
-	alive = false
-	removeCutsceneShield()
-	stopAllSounds()
-	if hunter then
-		hunter:Destroy()
-	end
-	if camera then
-		camera.CameraType = Enum.CameraType.Custom
-	end
-end)
+-- Random spawn ~80 studs away
+local randomDir = Vector3.new(math.random(-1,1), 0, math.random(-1,1)).Unit * 80
+hunter.Position = humanoidRootPart.Position + randomDir + Vector3.new(0, 10, 0)
 
 -- ==================== CONSTANT DAMAGE + KNOCKBACK ON TOUCH ====================
 hunter.Touched:Connect(function(hit)
-	if not alive then
-		return
-	end
+	if not alive then return end
 	if hit and hit:IsDescendantOf(character) then
 		humanoid:TakeDamage(15)
-
+		-- Knockback with 0.1s BodyVelocity
 		local bv = Instance.new("BodyVelocity")
 		bv.MaxForce = Vector3.new(4000, 4000, 4000)
-
-		local pushDir = (humanoidRootPart.Position - hunter.Position)
-		if pushDir.Magnitude < 0.1 then
-			pushDir = randomHorizontalDirection()
-		end
-		bv.Velocity = pushDir.Unit * 85 + Vector3.new(0, 30, 0)
+		local knockDir = (hit.Position - hunter.Position).Unit * 85 + Vector3.new(0, 30, 0)
+		bv.Velocity = knockDir
 		bv.Parent = humanoidRootPart
-
-		task.delay(0.1, function()
-			if bv then
-				bv:Destroy()
-			end
-		end)
+		task.delay(0.1, function() bv:Destroy() end)
 	end
 end)
 
--- ==================== SLASH ATTACK ====================
-local function createSlashAttack()
-	if not alive then
-		return
-	end
+-- ==================== SOUND HELPER ====================
+local activeSounds = {}
+local function playSound(id, volume, playbackSpeed, parent, loop)
+	volume = volume or 1
+	playbackSpeed = playbackSpeed or 1
+	parent = parent or hunter
+	local sound = Instance.new("Sound")
+	sound.SoundId = "rbxassetid://" .. id
+	sound.Volume = volume
+	sound.PlaybackSpeed = playbackSpeed
+	sound.Looped = loop or false
+	sound.Parent = parent
+	sound:Play()
+	table.insert(activeSounds, sound)
+	sound.Ended:Connect(function()
+		if table.find(activeSounds, sound) then
+			table.remove(activeSounds, table.find(activeSounds, sound))
+		end
+		sound:Destroy()
+	end)
+	return sound
+end
 
+-- Cleanup all sounds on death
+local function stopAllSounds()
+	for _, s in ipairs(activeSounds) do
+		if s then s:Stop() s:Destroy() end
+	end
+	activeSounds = {}
+end
+
+-- ==================== SCREEN SHAKE ====================
+local function screenShake(duration, intensity)
+	if not alive then return end
+	local conn
+	local start = tick()
+	conn = RunService.RenderStepped:Connect(function()
+		if not alive or tick() - start > duration then
+			conn:Disconnect()
+			return
+		end
+		local offset = Vector3.new(math.random(-intensity,intensity)/6, math.random(-intensity,intensity)/6, 0)
+		workspace.CurrentCamera.CFrame = workspace.CurrentCamera.CFrame * CFrame.new(offset)
+	end)
+end
+
+-- ==================== SLASH ATTACK (visual + hitbox) ====================
+local function createSlashAttack()
+	if not alive then return end
+	-- Visual thin long neon part (flashes + random rotation tween) - NOW POSITIONED AT PLAYER
 	local visual = Instance.new("Part")
-	visual.Size = Vector3.new(0.15, 0.15, 70)
+	visual.Size = Vector3.new(0.1, 0.1, 1000)
 	visual.Material = Enum.Material.Neon
 	visual.Color = Color3.fromRGB(255, 255, 0)
-	visual.Transparency = 0.15
+	visual.Transparency = 0.2
 	visual.Anchored = true
 	visual.CanCollide = false
-	visual.CFrame =
-		hunter.CFrame
-		* CFrame.new(0, 0, -4)
-		* CFrame.Angles(
-			math.rad(math.random(-90, 90)),
-			math.rad(math.random(-90, 90)),
-			math.rad(math.random(-90, 90))
-		)
-	visual.Parent = Workspace
+	visual.CFrame = CFrame.new(humanoidRootPart.Position) * CFrame.Angles(math.rad(math.random(-90,90)), math.rad(math.random(-90,90)), math.rad(math.random(-90,90)))
+	visual.Parent = workspace
 
+	-- Rapid flash + smooth random rotation tween (0.1s)
 	task.spawn(function()
-		for i = 1, 10 do
-			if not alive or not visual.Parent then
-				if visual then
-					visual:Destroy()
-				end
-				return
-			end
-
+		for i = 1, 8 do
+			if not alive then visual:Destroy() return end
 			visual.Color = (i % 2 == 0) and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(255, 0, 0)
-
-			local randomRot = CFrame.Angles(
-				math.rad(math.random(-180, 180)),
-				math.rad(math.random(-180, 180)),
-				math.rad(math.random(-180, 180))
-			)
-
-			TweenService:Create(visual, TweenInfo.new(0.06, Enum.EasingStyle.Linear), {
-				CFrame = visual.CFrame * randomRot
-			}):Play()
-
-			task.wait(0.018)
+			local randomRot = CFrame.Angles(math.rad(math.random(-180,180)), math.rad(math.random(-180,180)), math.rad(math.random(-180,180)))
+			TweenService:Create(visual, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {CFrame = visual.CFrame * randomRot}):Play()
+			task.wait(0.025)
 		end
 	end)
 
-	task.delay(0.08, function()
-		if not alive or not visual.Parent then
-			if visual then
-				visual:Destroy()
-			end
-			return
-		end
-
+	-- After visual starts, spawn the ACTUAL hitbox slash - ALSO AT PLAYER
+	task.delay(0.1, function()
+		if not alive then return end
 		local hitbox = Instance.new("Part")
-		hitbox.Size = Vector3.new(4, 4, 70)
+		hitbox.Size = Vector3.new(3, 3, 1000)
 		hitbox.Material = Enum.Material.Neon
 		hitbox.Color = Color3.fromRGB(255, 0, 0)
-		hitbox.Transparency = 0.35
+		hitbox.Transparency = 0.3
 		hitbox.Anchored = true
 		hitbox.CanCollide = false
-		hitbox.CFrame = visual.CFrame
-		hitbox.Parent = Workspace
+		hitbox.CFrame = CFrame.new(humanoidRootPart.Position) * CFrame.Angles(math.rad(math.random(-90,90)), math.rad(math.random(-90,90)), math.rad(math.random(-90,90)))
+		hitbox.Parent = workspace
 
+		-- Damage on touch (only localplayer)
 		hitbox.Touched:Connect(function(hitPart)
-			if not alive then
-				return
-			end
+			if not alive then return end
 			if hitPart and hitPart:IsDescendantOf(character) then
 				humanoid:TakeDamage(7)
 			end
 		end)
 
-		local shrinkTween = TweenService:Create(hitbox, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Size = Vector3.new(0.1, 0.1, 70)
-		})
+		-- Tween shrink to 0,0,1000 then delete
+		local shrinkTween = TweenService:Create(hitbox, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.new(0, 0, 1000) })
 		shrinkTween:Play()
-		shrinkTween.Completed:Connect(function()
-			if hitbox then
-				hitbox:Destroy()
-			end
-		end)
+		shrinkTween.Completed:Connect(function() hitbox:Destroy() end)
 
-		task.delay(0.25, function()
-			if visual then
-				visual:Destroy()
-			end
-		end)
+		-- Visual fades out
+		task.delay(0.4, function() if visual then visual:Destroy() end end)
 	end)
 
-	playSound(136999902658730, 5, 1, Workspace, false)
+	playSound(136999902658730, 5, 1, workspace)
 end
 
--- ==================== GROUND PULL / CHUNK THROW ====================
-local function launchGroundChunk(sourcePos, targetPos, groundMat, groundColor, damage)
-	if not alive then
-		return
-	end
-
-	local chunk = Instance.new("Part")
-	chunk.Size = Vector3.new(math.random(3, 7), math.random(3, 7), math.random(3, 7))
-	chunk.Material = groundMat or Enum.Material.Slate
-	chunk.Color = groundColor or Color3.fromRGB(110, 110, 110)
-	chunk.Anchored = true
-	chunk.CanCollide = true
-	chunk.Position = sourcePos
-	chunk.Parent = Workspace
-
-	local liftTween = TweenService:Create(chunk, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Position = sourcePos + Vector3.new(0, math.random(7, 14), 0)
-	})
-	liftTween:Play()
-
-	liftTween.Completed:Connect(function()
-		if not alive or not chunk.Parent then
-			return
-		end
-
-		chunk.Anchored = false
-
-		local aimDir = targetPos - chunk.Position
-		if aimDir.Magnitude < 0.1 then
-			aimDir = randomHorizontalDirection()
-		end
-
-		chunk.AssemblyLinearVelocity = aimDir.Unit * math.random(90, 150) + Vector3.new(0, math.random(40, 90), 0)
-		chunk.AssemblyAngularVelocity = Vector3.new(
-			math.random(-15, 15),
-			math.random(-15, 15),
-			math.random(-15, 15)
-		)
-
-		chunk.Touched:Connect(function(hit)
-			if not alive then
-				return
-			end
-			if hit and hit:IsDescendantOf(character) then
-				humanoid:TakeDamage(damage or 12)
-			end
-		end)
-
-		task.delay(4, function()
-			if chunk then
-				chunk:Destroy()
-			end
-		end)
-	end)
-end
-
-local function spawnGroundPullBurst(count, ringRadius, pullHeight, damage)
-	if not alive then
-		return
-	end
-
-	count = count or 6
-	ringRadius = ringRadius or 26
-	pullHeight = pullHeight or 35
-	damage = damage or 12
-
-	for i = 1, count do
-		task.delay((i - 1) * 0.03, function()
-			if not alive then
-				return
-			end
-
-			local angle = math.random() * math.pi * 2
-			local offset = Vector3.new(math.cos(angle) * ringRadius, 0, math.sin(angle) * ringRadius)
-			local origin = humanoidRootPart.Position + offset + Vector3.new(0, pullHeight, 0)
-
-			local rayParams = RaycastParams.new()
-			rayParams.FilterType = Enum.RaycastFilterType.Exclude
-			rayParams.FilterDescendantsInstances = { hunter, character }
-
-			local ray = Workspace:Raycast(origin, Vector3.new(0, -120, 0), rayParams)
-			if ray then
-				launchGroundChunk(
-					ray.Position,
-					humanoidRootPart.Position,
-					ray.Instance.Material,
-					ray.Instance.Color,
-					damage
-				)
-			end
-		end)
-	end
-end
-
-local function spawnSlashCircle(count)
-	if not alive then
-		return
-	end
-
-	count = count or 14
-	for i = 1, count do
-		task.delay(i * 0.02, function()
-			if not alive then
-				return
-			end
-
-			local angle = (i / count) * math.pi * 2
-			local slashPos = humanoidRootPart.Position + Vector3.new(math.cos(angle) * 18, 7, math.sin(angle) * 18)
-			local lookAt = CFrame.lookAt(slashPos, humanoidRootPart.Position)
-
-			local visual = Instance.new("Part")
-			visual.Size = Vector3.new(0.15, 0.15, 24)
-			visual.Material = Enum.Material.Neon
-			visual.Color = Color3.fromRGB(255, 0, 0)
-			visual.CFrame = lookAt * CFrame.Angles(math.rad(90), 0, 0)
-			visual.Anchored = true
-			visual.CanCollide = false
-			visual.Parent = Workspace
-
-			local hb = Instance.new("Part")
-			hb.Size = Vector3.new(4, 4, 24)
-			hb.Material = Enum.Material.Neon
-			hb.Color = Color3.fromRGB(255, 120, 0)
-			hb.Transparency = 0.5
-			hb.CFrame = visual.CFrame
-			hb.Anchored = true
-			hb.CanCollide = false
-			hb.Parent = Workspace
-
-			hb.Touched:Connect(function(hit)
-				if alive and hit and hit:IsDescendantOf(character) then
-					humanoid:TakeDamage(11)
-				end
-			end)
-
-			TweenService:Create(visual, TweenInfo.new(0.25), {
-				Transparency = 1,
-				Size = Vector3.new(0.05, 0.05, 0.05)
-			}):Play()
-
-			TweenService:Create(hb, TweenInfo.new(0.18), {
-				Transparency = 1,
-				Size = Vector3.new(0.05, 0.05, 0.05)
-			}):Play()
-
-			task.delay(0.3, function()
-				if visual then
-					visual:Destroy()
-				end
-				if hb then
-					hb:Destroy()
-				end
-			end)
-		end)
-	end
-end
-
--- ==================== MAIN LOOP ====================
+-- ==================== MAIN TIME-BASED CHAOS LOOP ====================
 task.spawn(function()
 	local startTime = tick()
-	local currentSpeed = 16
-
-	local lastSlashTime = 0
-	local lastRockTime = 0
-	local lastSlashCircleTime = 0
-
+	local currentSpeed = 10
+	local lastSlashTime = startTime
+	local lastRockTime = startTime
+	local lastSlashCircleTime = startTime
 	local currentPhase = 1
 	local musicSound = nil
-
 	local frozen = false
-	local cutsceneActive = false
-	local combatEnabled = true
-	local phase4CombatEnabled = false
-	local finalTriggered = false
+	local orbitingOrbs = {}
+	local rainTask = nil
+	local forceField = nil
 
+	-- Constant chase + face loop (anchored but we set CFrame + Position for smooth chaotic movement)
 	local chaseConnection = RunService.Heartbeat:Connect(function(dt)
-		if not alive or frozen or not hunter.Parent then
-			return
-		end
-
+		if not alive or frozen then return end
 		local targetPos = humanoidRootPart.Position
-		local dir = targetPos - hunter.Position
-		if dir.Magnitude < 0.1 then
-			dir = randomHorizontalDirection()
-		end
-
+		local dir = (targetPos - hunter.Position).Unit
+		-- Face player + chaotic micro-jitter
 		hunter.CFrame = CFrame.lookAt(hunter.Position, targetPos) * CFrame.Angles(
-			math.rad(math.random(-2, 2)),
-			math.rad(math.random(-2, 2)),
-			0
+			math.rad(math.random(-3,3)), math.rad(math.random(-3,3)), 0
 		)
-
-		hunter.Position = hunter.Position + dir.Unit * currentSpeed * dt
+		-- Move forward (chaotic speed)
+		hunter.Position = hunter.Position + dir * currentSpeed * dt
 	end)
 
-	local function beginPhase4Cutscene()
-		if cutsceneActive then
-			return
-		end
-
-		cutsceneActive = true
-		combatEnabled = false
-		frozen = true
-
-		createCutsceneShield()
-		freezePlayer()
-
-		if musicSound then
-			pcall(function()
-				musicSound.SoundId = "rbxassetid://0"
-				musicSound:Stop()
-			end)
-		end
-
-		if camera then
-			camera.CameraType = Enum.CameraType.Scriptable
-			camera.CFrame = CFrame.lookAt(
-				humanoidRootPart.Position + Vector3.new(0, 8, 18),
-				hunter.Position
-			)
-		end
-
-		faceDecal.Texture = "rbxassetid://120341831299080"
-		playSound(140736374485942, 10, 1, hunter, false)
-		screenShake(2.5, 18)
-
-		task.delay(7, function()
-			if not alive then
-				return
-			end
-
-			removeCutsceneShield()
-			unfreezePlayer()
-			if camera then
-				camera.CameraType = Enum.CameraType.Custom
-				camera.CameraSubject = humanoid
-			end
-
-			frozen = false
-			combatEnabled = true
-			phase4CombatEnabled = true
-
-			faceDecal.Texture = "rbxassetid://91469937282906"
-
-			if musicSound then
-				pcall(function()
-					musicSound:Destroy()
-				end)
-			end
-			musicSound = playSound(139942137831770, 4, 1, SoundService, true)
-
-			currentSpeed = currentSpeed * 1.8
-
-			playSound(111783701501789, 6, 1, hunter, true)
-
-			task.spawn(function()
-				while alive and phase4CombatEnabled do
-					hunter.Orientation = hunter.Orientation + Vector3.new(
-						math.random(-25, 25),
-						math.random(-20, 20),
-						math.random(-20, 20)
-					)
-					task.wait(0.01)
-				end
-			end)
-
-			for i = 1, 10 do
-				local orb = Instance.new("Part")
-				orb.Size = Vector3.new(2.6, 2.6, 2.6)
-				orb.Shape = Enum.PartType.Ball
-				orb.Material = Enum.Material.Neon
-				orb.Color = Color3.fromRGB(255, 100, 0)
-				orb.CanCollide = false
-				orb.Anchored = true
-				orb.Parent = Workspace
-				table.insert(orbitingOrbs, orb)
-
-				local cooldown = false
-				orb.Touched:Connect(function(hit)
-					if cooldown or not alive then
-						return
-					end
-					if hit and hit:IsDescendantOf(character) then
-						cooldown = true
-						humanoid:TakeDamage(25)
-						orb.Transparency = 1
-						playSound(140615626179933, 2, 1, orb, false)
-						task.delay(2.5, function()
-							if orb and orb.Parent then
-								orb.Transparency = 0
-							end
-							cooldown = false
-						end)
-					end
-				end)
-			end
-
-			task.spawn(function()
-				local orbitTime = 0
-				while alive and phase4CombatEnabled do
-					orbitTime += 0.016
-					for idx, orb in ipairs(orbitingOrbs) do
-						if orb and orb.Parent then
-							local angle = (orbitTime * 20 + idx * 36) * math.pi / 180
-							local offset = CFrame.new(math.cos(angle) * 18, math.sin(orbitTime * 10) * 7, math.sin(angle) * 18)
-							orb.CFrame = hunter.CFrame * offset
-						end
-					end
-					task.wait(0.016)
-				end
-			end)
-
-			task.spawn(function()
-				while alive and phase4CombatEnabled do
-					for i = 1, 8 do
-						local rayParams = RaycastParams.new()
-						rayParams.FilterType = Enum.RaycastFilterType.Exclude
-						rayParams.FilterDescendantsInstances = { hunter, character }
-
-						local dropPos = humanoidRootPart.Position + Vector3.new(math.random(-35, 35), 120, math.random(-35, 35))
-						local ray = Workspace:Raycast(dropPos, Vector3.new(0, -160, 0), rayParams)
-						if ray then
-							local orb = Instance.new("Part")
-							orb.Size = Vector3.new(4, 4, 4)
-							orb.Material = Enum.Material.CorrodedMetal
-							orb.Color = Color3.fromRGB(180, 0, 0)
-							orb.Position = ray.Position + Vector3.new(0, 1, 0)
-							orb.CanCollide = false
-							orb.Parent = Workspace
-
-							orb.AssemblyLinearVelocity = Vector3.new(math.random(-40, 40), -280, math.random(-40, 40))
-							orb.Touched:Connect(function(hit)
-								if alive and hit and hit:IsDescendantOf(character) then
-									humanoid:TakeDamage(18)
-									if orb then
-										orb:Destroy()
-									end
-								end
-							end)
-							task.delay(3.2, function()
-								if orb then
-									orb:Destroy()
-								end
-							end)
-						end
-					end
-
-					for i = 1, 10 do
-						local jet = Instance.new("Part")
-						jet.Size = Vector3.new(2.2, 2.2, 2.2)
-						jet.Material = Enum.Material.Neon
-						jet.Color = (i % 2 == 0) and Color3.fromRGB(255, 255, 0) or Color3.fromRGB(255, 0, 0)
-						jet.Position = humanoidRootPart.Position + Vector3.new(math.random(-30, 30), -2, math.random(-30, 30))
-						jet.CanCollide = false
-						jet.Parent = Workspace
-						jet.AssemblyLinearVelocity = Vector3.new(math.random(-110, 110), math.random(140, 240), math.random(-110, 110))
-
-						jet.Touched:Connect(function(hit)
-							if alive and hit and hit:IsDescendantOf(character) then
-								humanoid:TakeDamage(6)
-							end
-						end)
-
-						task.delay(2.5, function()
-							if jet then
-								jet:Destroy()
-							end
-						end)
-					end
-
-					spawnGroundPullBurst(10, 30, 40, 14)
-					task.wait(0.12)
-				end
-			end)
-		end)
-	end
-
-	while alive and (tick() - startTime) < 31 do
+	while alive and (tick() - startTime) < 90 do
 		local elapsed = tick() - startTime
 
-		-- Final phase
-		if elapsed >= 26 and currentPhase < 5 and not finalTriggered then
-			finalTriggered = true
+		-- ==================== PHASE TRANSITIONS (SHORTER WAIT TIMES FOR FASTER CHAOS) ====================
+		if elapsed >= 75 and currentPhase < 5 then
 			currentPhase = 5
 			frozen = true
-			phase4CombatEnabled = false
-			combatEnabled = false
-
-			screenShake(3, 22)
-			playSound(111783701501789, 8, 1.2, hunter, true)
-
+			-- Final explosion phase
+			screenShake(3, 25)
+			playSound(111783701501789, 8, 1.2, hunter)
+			-- Speed up the looped shake sound
 			task.spawn(function()
 				local shakeSpeed = 1.2
-				while alive and (tick() - startTime) < 29 do
-					shakeSpeed += 0.45
-					if musicSound then
-						pcall(function()
-							musicSound.PlaybackSpeed = shakeSpeed
-						end)
-					end
-					hunter.Orientation = hunter.Orientation + Vector3.new(
-						math.sin(tick() * 80) * 25,
-						math.sin(tick() * 60) * 18,
-						0
-					)
+				while alive and (tick() - startTime) < 80 do
+					shakeSpeed = shakeSpeed + 0.4
+					if musicSound then musicSound.PlaybackSpeed = shakeSpeed end
+					hunter.Orientation = hunter.Orientation + Vector3.new(math.sin(tick()*80)*40, math.sin(tick()*60)*30, 0)
 					task.wait(0.02)
 				end
 			end)
-
-			for i = 1, 45 do
+			-- Explode into 50 large unanchored stone rocks
+			for i = 1, 50 do
 				local rock = Instance.new("Part")
-				rock.Size = Vector3.new(math.random(4, 10), math.random(4, 10), math.random(4, 10))
+				rock.Size = Vector3.new(math.random(6,14), math.random(6,14), math.random(6,14))
 				rock.Shape = Enum.PartType.Block
 				rock.Material = Enum.Material.Rock
-				rock.Color = Color3.fromRGB(math.random(80, 140), math.random(80, 140), math.random(80, 140))
-				rock.Position = hunter.Position + Vector3.new(math.random(-18, 18), math.random(-8, 25), math.random(-18, 18))
+				rock.Color = Color3.fromRGB(math.random(80,140), math.random(80,140), math.random(80,140))
+				rock.Position = hunter.Position + Vector3.new(math.random(-25,25), math.random(-10,35), math.random(-25,25))
 				rock.CanCollide = true
 				rock.Anchored = false
-				rock.AssemblyLinearVelocity = Vector3.new(
-					math.random(-260, 260),
-					math.random(140, 360),
-					math.random(-260, 260)
-				)
-				rock.Parent = Workspace
-
+				rock.Velocity = Vector3.new(math.random(-280,280), math.random(120,380), math.random(-280,280))
+				rock.Parent = workspace
 				rock.Touched:Connect(function(hit)
-					if alive and hit and hit:IsDescendantOf(character) then
+					if alive and hit:IsDescendantOf(character) then
 						humanoid:TakeDamage(22)
 					end
 				end)
-
-				task.delay(5, function()
-					if rock then
-						rock:Destroy()
+				task.delay(6, function() if rock then rock:Destroy() end end)
+				task.wait(0.005)
+			end
+			task.delay(1.5, function()
+				if hunter then hunter:Destroy() end
+				stopAllSounds()
+			end)
+			break
+		elseif elapsed >= 55 and currentPhase < 4 then
+			currentPhase = 4
+			frozen = true
+			-- PHASE 4 CUTSCENE START: FORCEFIELD ON PLAYER + SET SONG SOUNDID TO 0 + NO ABILITIES YET
+			forceField = Instance.new("ForceField")
+			forceField.Parent = character
+			if musicSound then
+				musicSound.SoundId = "rbxassetid://0"
+			end
+			faceDecal.Texture = "rbxassetid://120341831299080"
+			-- Freeze player character
+			humanoid.PlatformStand = true
+			humanoid.WalkSpeed = 0
+			humanoid.JumpPower = 0
+			-- Play special audio from hunter
+			playSound(140736374485942, 10, 1, hunter, false)
+			-- Camera cinematic tween (10 studs in front → 5 studs in front, facing hunter)
+			workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
+			local camStartPos = hunter.Position + hunter.CFrame.LookVector * 10
+			local camGoalPos = hunter.Position + hunter.CFrame.LookVector * 5
+			TweenService:Create(workspace.CurrentCamera, TweenInfo.new(5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+				CFrame = CFrame.lookAt(camStartPos, hunter.Position)
+			}):Play()
+			task.delay(5, function()
+				if not alive then return end
+				TweenService:Create(workspace.CurrentCamera, TweenInfo.new(5, Enum.EasingStyle.Sine), {
+					CFrame = CFrame.lookAt(camGoalPos, hunter.Position)
+				}):Play()
+			end)
+			-- At +7 seconds into this phase: face switch + rapid shake + looped sound + song change (abilities still blocked)
+			task.delay(7, function()
+				if not alive then return end
+				faceDecal.Texture = "rbxassetid://91469937282906"
+				playSound(111783701501789, 6, 1, hunter, true) -- looped
+				if musicSound then musicSound:Destroy() end
+				musicSound = playSound(139942137831770, 4, 1, SoundService, true)
+				-- Chase speed *2x (even though frozen, for later logic)
+				currentSpeed = currentSpeed * 2
+				-- Rapid shake while frozen
+				task.spawn(function()
+					while alive and frozen do
+						hunter.Orientation = hunter.Orientation + Vector3.new(math.random(-35,35), math.random(-25,25), math.random(-20,20))
+						task.wait(0.008)
 					end
 				end)
-				task.wait(0.004)
-			end
-
-			task.delay(1.5, function()
-				if hunter then
-					hunter:Destroy()
-				end
-				stopAllSounds()
-				removeCutsceneShield()
-				if camera then
-					camera.CameraType = Enum.CameraType.Custom
-					camera.CameraSubject = humanoid
-				end
-				unfreezePlayer()
 			end)
 
-			break
-		end
+			-- CUTSCENE ENDS AFTER 12 SECONDS: UNFREEZE PLAYER + HUNTER + REMOVE FORCEFIELD + START ABILITIES
+			task.delay(12, function()
+				if not alive then return end
+				frozen = false
+				humanoid.PlatformStand = false
+				humanoid.WalkSpeed = 16
+				humanoid.JumpPower = 50
+				if forceField then
+					forceField:Destroy()
+					forceField = nil
+				end
+				workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+				-- NOW spawn abilities (orbiting orbs + rainTask) after cutscene
+				for i = 1, 10 do
+					local orb = Instance.new("Part")
+					orb.Size = Vector3.new(3, 3, 3)
+					orb.Shape = Enum.PartType.Ball
+					orb.Material = Enum.Material.Neon
+					orb.Color = Color3.fromRGB(255, 100, 0)
+					orb.CanCollide = false
+					orb.Anchored = true
+					orb.Parent = workspace
+					table.insert(orbitingOrbs, orb)
+					local cooldown = 0
+					orb.Touched:Connect(function(hit)
+						if cooldown > 0 or not alive then return end
+						if hit and hit:IsDescendantOf(character) then
+							humanoid:TakeDamage(25)
+							orb.Transparency = 1
+							cooldown = 5
+							playSound(140615626179933, 2)
+							task.delay(5, function()
+								if orb then orb.Transparency = 0 end
+								cooldown = 0
+							end)
+						end
+					end)
+				end
+				-- Orbit update task
+				task.spawn(function()
+					local orbitTime = 0
+					while alive and not frozen do
+						orbitTime += 0.016
+						for idx, orb in ipairs(orbitingOrbs) do
+							if orb then
+								local angle = (orbitTime * 18 + idx * 36) * math.pi / 180
+								local offset = CFrame.new(math.cos(angle) * 22, math.sin(orbitTime * 12) * 8, math.sin(angle) * 22)
+								orb.CFrame = hunter.CFrame * offset
+							end
+						end
+						task.wait(0.016)
+					end
+				end)
+				-- Bullet-speed corroded-metal falling orbs + ground jets + meteors (super chaotic)
+				rainTask = task.spawn(function()
+					while alive and currentPhase == 4 do
+						-- Corroded metal bullet orbs + meteors
+						for i = 1, 7 do
+							local orb = Instance.new("Part")
+							orb.Size = Vector3.new(4,4,4)
+							orb.Material = Enum.Material.CorrodedMetal
+							orb.Color = Color3.fromRGB(180, 0, 0)
+							orb.Position = humanoidRootPart.Position + Vector3.new(math.random(-40,40), 120 + math.random(0,60), math.random(-40,40))
+							orb.Velocity = Vector3.new(0, -280, 0) + Vector3.new(math.random(-60,60), 0, math.random(-60,60))
+							orb.CanCollide = false
+							orb.Parent = workspace
+							orb.Touched:Connect(function(hit)
+								if alive and hit:IsDescendantOf(character) then
+									humanoid:TakeDamage(18)
+									orb:Destroy()
+								end
+							end)
+							task.delay(4, function() if orb then orb:Destroy() end end)
+						end
+						-- Random ground jet neon parts (red + yellow, burn damage)
+						for i = 1, 9 do
+							local jetPos = humanoidRootPart.Position + Vector3.new(math.random(-35,35), -2, math.random(-35,35))
+							local jet = Instance.new("Part")
+							jet.Size = Vector3.new(2.5, 2.5, 2.5)
+							jet.Material = Enum.Material.Neon
+							jet.Color = (i % 2 == 0) and Color3.fromRGB(255,255,0) or Color3.fromRGB(255,0,0)
+							jet.Position = jetPos
+							jet.Velocity = Vector3.new(math.random(-90,90), math.random(140,220), math.random(-90,90))
+							jet.CanCollide = false
+							jet.Parent = workspace
+							jet.Touched:Connect(function(hit)
+								if alive and hit:IsDescendantOf(character) then
+									humanoid:TakeDamage(6)
+								end
+							end)
+							task.delay(3, function() if jet then jet:Destroy() end end)
+						end
+						task.wait(0.12)
+					end
+				end)
+			end)
 
-		-- Phase 4 cutscene start
-		if elapsed >= 12 and currentPhase < 4 then
-			currentPhase = 4
-			beginPhase4Cutscene()
-		elseif elapsed >= 8 and currentPhase < 3 then
+		elseif elapsed >= 35 and currentPhase < 3 then
 			currentPhase = 3
 			faceDecal.Texture = "rbxassetid://112475315234322"
-			currentSpeed = currentSpeed * 1.7
-
-			if musicSound then
-				musicSound:Destroy()
-			end
+			currentSpeed = currentSpeed * 1.5
+			if musicSound then musicSound:Destroy() end
 			musicSound = playSound(138572180557517, 3.5, 1, SoundService, true)
-		elseif elapsed >= 4 and currentPhase < 2 then
+			-- Faster slashes + slash circle every 5s
+			-- Red neon orb rain
+			rainTask = task.spawn(function()
+				while alive and currentPhase == 3 do
+					-- Red neon orbs rain down
+					for i = 1, 6 do
+						local orb = Instance.new("Part")
+						orb.Size = Vector3.new(5,5,5)
+						orb.Material = Enum.Material.Neon
+						orb.Color = Color3.fromRGB(255, 50, 0)
+						orb.Position = humanoidRootPart.Position + Vector3.new(math.random(-45,45), 110, math.random(-45,45))
+						orb.Velocity = Vector3.new(math.random(-30,30), -120, math.random(-30,30))
+						orb.CanCollide = false
+						orb.Parent = workspace
+						local blast = nil
+						orb.Touched:Connect(function(hit)
+							if not alive or blast then return end
+							if hit:IsDescendantOf(character) then
+								humanoid:TakeDamage(14)
+								-- Expand into red blast with high knockback
+								blast = true
+								orb.Size = Vector3.new(12,12,12)
+								orb.Transparency = 0.4
+								orb.Color = Color3.fromRGB(255,255,255)
+								TweenService:Create(orb, TweenInfo.new(1.2, Enum.EasingStyle.Quad), {Transparency = 1, Size = Vector3.new(0.1,0.1,0.1)}):Play()
+								task.delay(1.3, function() if orb then orb:Destroy() end end)
+								-- High knockback
+								local bv = Instance.new("BodyVelocity")
+								bv.MaxForce = Vector3.new(9999,9999,9999)
+								bv.Velocity = Vector3.new(math.random(-90,90), 110, math.random(-90,90))
+								bv.Parent = humanoidRootPart
+								task.delay(0.6, function() bv:Destroy() end)
+							end
+						end)
+						task.delay(5, function() if orb then orb:Destroy() end end)
+					end
+					task.wait(0.35)
+				end
+			end)
+		elseif elapsed >= 15 and currentPhase < 2 then
 			currentPhase = 2
 			faceDecal.Texture = "rbxassetid://74271481742980"
-			currentSpeed = currentSpeed * 2.4
-
-			if musicSound then
-				musicSound:Destroy()
-			end
+			currentSpeed = currentSpeed * 3
+			if musicSound then musicSound:Destroy() end
 			musicSound = playSound(140725984089213, 4, 1, SoundService, true)
+			-- Slash rate becomes 3x faster (every ~0.8s now for extra chaos)
 		end
 
-		-- Normal slash spam
-		if not cutsceneActive then
-			local slashRate = 0.0
-			if currentPhase == 1 then
-				slashRate = 1.8
-			elseif currentPhase == 2 then
-				slashRate = 0.9
-			elseif currentPhase == 3 then
-				slashRate = 0.45
-			elseif currentPhase == 4 then
-				slashRate = phase4CombatEnabled and 0.22 or math.huge
+		-- ==================== ATTACK SCHEDULERS (FASTER FOR MORE CHAOS) ====================
+		-- Normal slashes (rate increased per phase)
+		local slashRate = (currentPhase == 1) and 2 or (currentPhase == 2) and 0.8 or (currentPhase >= 3) and 0.4
+		if elapsed - lastSlashTime >= slashRate then
+			lastSlashTime = elapsed
+			createSlashAttack()
+			-- Extra scatter in later phases
+			if currentPhase >= 3 and math.random() < 0.7 then
+				task.delay(0.1, createSlashAttack)
 			end
+		end
 
-			if elapsed - lastSlashTime >= slashRate then
-				lastSlashTime = elapsed
-				createSlashAttack()
-
-				if currentPhase >= 3 and math.random() < 0.8 then
-					task.delay(0.08, createSlashAttack)
-				end
+		-- Slash circles (phase 3+ every 5s, more violent in phase 4)
+		if currentPhase >= 3 and elapsed - lastSlashCircleTime >= 5 then
+			lastSlashCircleTime = elapsed
+			for i = 1, (currentPhase == 4 and 24 or 14) do
+				task.delay(i * 0.03, function()
+					if not alive then return end
+					local angle = i * (360 / (currentPhase == 4 and 24 or 14))
+					local offset = CFrame.Angles(0, math.rad(angle), 0)
+					local slashPos = humanoidRootPart.Position + offset.LookVector * 18 + Vector3.new(0, 8, 0)
+					local visual = Instance.new("Part")
+					visual.Size = Vector3.new(0.1, 0.1, 35)
+					visual.Material = Enum.Material.Neon
+					visual.Color = Color3.fromRGB(255, 0, 0)
+					visual.CFrame = CFrame.new(slashPos) * offset * CFrame.Angles(math.rad(90), 0, 0)
+					visual.Anchored = true
+					visual.CanCollide = false
+					visual.Parent = workspace
+					TweenService:Create(visual, TweenInfo.new(0.4), {Transparency = 1, Size = Vector3.new(0,0,0)}):Play()
+					task.delay(0.45, function() visual:Destroy() end)
+					-- Quick damage hitbox
+					local hb = visual:Clone()
+					hb.Size = Vector3.new(4,4,35)
+					hb.Color = Color3.fromRGB(255,100,0)
+					hb.Transparency = 0.5
+					hb.Parent = workspace
+					hb.Touched:Connect(function(hit)
+						if alive and hit:IsDescendantOf(character) then
+							humanoid:TakeDamage(11)
+						end
+					end)
+					task.delay(0.3, function() hb:Destroy() end)
+				end)
 			end
+		end
 
-			-- Slash circles
-			if currentPhase >= 3 and elapsed - lastSlashCircleTime >= 1.8 then
-				lastSlashCircleTime = elapsed
-				spawnSlashCircle(currentPhase == 4 and 24 or 16)
-			end
-
-			-- Ground chunks being ripped out and thrown
-			if currentPhase >= 2 and elapsed - lastRockTime >= (currentPhase == 2 and 0.95 or currentPhase == 3 and 0.7 or 0.5) then
-				lastRockTime = elapsed
-				spawnGroundPullBurst(
-					currentPhase == 2 and 6 or currentPhase == 3 and 9 or 12,
-					currentPhase == 2 and 24 or currentPhase == 3 and 28 or 32,
-					currentPhase == 2 and 28 or currentPhase == 3 and 36 or 42,
-					currentPhase == 2 and 10 or currentPhase == 3 and 12 or 15
-				)
+		-- Phase 2+ rock launch every 2 seconds - GROUND PULLS FROM HUNTER CUBE + ORIENTED AROUND PLAYER WITH MORE DISTANCE + LESS DAMAGE
+		if currentPhase >= 2 and elapsed - lastRockTime >= 2 then
+			lastRockTime = elapsed
+			local rayParams = RaycastParams.new()
+			rayParams.FilterDescendantsInstances = {hunter, character}
+			rayParams.FilterType = Enum.RaycastFilterType.Exclude
+			-- Ground attacks oriented around player with MORE distance (35 studs out)
+			local dir = Vector3.new(math.random(-1,1), 0, math.random(-1,1)).Unit * 35
+			local checkPos = humanoidRootPart.Position + dir + Vector3.new(0, 40, 0)
+			local rayResult = workspace:Raycast(checkPos, Vector3.new(0, -150, 0), rayParams)
+			if rayResult then
+				local groundMat = rayResult.Instance.Material
+				local groundColor = rayResult.Instance.Color
+				local rock = Instance.new("Part")
+				rock.Size = Vector3.new(5,5,5)
+				rock.Material = groundMat
+				rock.Color = groundColor
+				rock.Position = rayResult.Position + Vector3.new(0, 3, 0)
+				rock.Anchored = true
+				rock.CanCollide = true
+				rock.Parent = workspace
+				-- Raise into air (pulled from ground near hunter's influence)
+				TweenService:Create(rock, TweenInfo.new(0.6, Enum.EasingStyle.Bounce), { Position = rock.Position + Vector3.new(0, 12, 0) }):Play()
+				task.delay(0.7, function()
+					if not alive or not rock then return end
+					rock.Anchored = false
+					rock.Velocity = (humanoidRootPart.Position - rock.Position).Unit * 90 + Vector3.new(0, 45, 0)
+					-- Explode on impact with rock debris
+					rock.Touched:Connect(function(hit)
+						if not alive then return end
+						if hit:IsDescendantOf(character) then
+							humanoid:TakeDamage(9) -- LESS DAMAGE
+							rock:Destroy()
+							-- Bigger debris storm
+							for d = 1, 14 do
+								local debris = Instance.new("Part")
+								debris.Size = Vector3.new(math.random(2,5), math.random(2,5), math.random(2,5))
+								debris.Material = groundMat
+								debris.Color = groundColor
+								debris.Position = rock.Position
+								debris.Velocity = Vector3.new(math.random(-120,120), math.random(70,140), math.random(-120,120))
+								debris.CanCollide = false
+								debris.Parent = workspace
+								debris.Touched:Connect(function(h)
+									if alive and h:IsDescendantOf(character) then
+										humanoid:TakeDamage(4) -- LESS DAMAGE
+									end
+								end)
+								task.delay(3.5, function() if debris then debris:Destroy() end end)
+							end
+						end
+					end)
+				end)
 			end
 		end
 
@@ -830,29 +542,13 @@ task.spawn(function()
 	end
 
 	-- FINAL CLEANUP
-	if chaseConnection then
-		chaseConnection:Disconnect()
-	end
-
+	chaseConnection:Disconnect()
+	if rainTask then task.cancel(rainTask) end
 	for _, orb in ipairs(orbitingOrbs) do
-		if orb then
-			orb:Destroy()
-		end
+		if orb then orb:Destroy() end
 	end
-
-	removeCutsceneShield()
+	if hunter then hunter:Destroy() end
 	stopAllSounds()
-
-	if hunter and hunter.Parent then
-		hunter:Destroy()
-	end
-
-	if camera then
-		camera.CameraType = Enum.CameraType.Custom
-		camera.CameraSubject = humanoid
-	end
-
-	unfreezePlayer()
-
-	print("✅ CHAOS HUNTER LOCALSCRIPT LOADED")
+	workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+	print("✅ TIME-BASED CHAOS HUNTER LOCALSCRIPT LOADED - ONLY AFFECTS YOU - ULTRA CHAOTIC")
 end)
