@@ -1,1162 +1,909 @@
---!strict
--- 120-second chaos LocalScript with phase music + shutdown flash
--- Put this in StarterPlayerScripts
+--// CHAOTIC ROBLOX LOCALSCRIPT - TIME-BASED MULTI-PHASE HUNTER v2 (FIXED)
+--// Put this in StarterPlayer > StarterPlayerScripts
+--// LocalPlayer-only visuals, sounds, and damage. Ends on your death or after 175s.
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local Debris = game:GetService("Debris")
-local Lighting = game:GetService("Lighting")
-local SoundService = game:GetService("SoundService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
-local camera = workspace.CurrentCamera
+local rng = Random.new()
 
-local DURATION = 120
-local START_TIME = os.clock()
+--========================
+-- Character references
+--========================
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-local SND = {
-	Explosion = "rbxassetid://140615626179933",
-	Shriek = "rbxassetid://135049904093550",
-	Horn = "rbxassetid://121533907629378",
-	Worm = "rbxassetid://111993673815478",
-	Missile = "rbxassetid://113032480637316",
-}
+local alive = true
+local cleanedUp = false
 
-local MUSIC = {
-	Calm = "rbxassetid://139770038067721",
-	Warmup = "rbxassetid://140736185536900",
-	Escalation = "rbxassetid://140730997974832",
-	Apocalypse = "rbxassetid://140646145129329",
-}
+local function refreshCharacterRefs(newCharacter)
+	character = newCharacter
+	humanoid = character:WaitForChild("Humanoid")
+	humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+end
 
-local PHASE_VOLUME = {
-	Calm = 0.65,
-	Warmup = 0.72,
-	Escalation = 0.8,
-	Apocalypse = 0.9,
-}
+--========================
+-- Cleanup tracking
+--========================
+local trackedInstances = {}
+local trackedConnections = {}
+local activeSounds = {}
 
-local running = true
-local shuttingDown = false
-local cleanupDone = false
-local activePhase = ""
-local apocalypseOrbsSpawned = false
-local connections: { RBXScriptConnection } = {}
+local function trackInstance(inst)
+	table.insert(trackedInstances, inst)
+	return inst
+end
 
-local function track(conn: RBXScriptConnection)
-	table.insert(connections, conn)
+local function trackConnection(conn)
+	table.insert(trackedConnections, conn)
 	return conn
 end
 
-local function alive(): boolean
-	return running and (os.clock() - START_TIME < DURATION)
-end
-
-local function progress(): number
-	return math.clamp((os.clock() - START_TIME) / DURATION, 0, 1)
-end
-
-local function ramp(): number
-	local p = progress()
-	return p * p
-end
-
-local function currentPhase(): string
-	local p = progress()
-	if p < 0.20 then
-		return "Calm"
-	elseif p < 0.45 then
-		return "Warmup"
-	elseif p < 0.75 then
-		return "Escalation"
-	else
-		return "Apocalypse"
+local function removeSoundFromActive(sound)
+	for i = #activeSounds, 1, -1 do
+		if activeSounds[i] == sound then
+			table.remove(activeSounds, i)
+			return
+		end
 	end
 end
 
-local function getCharacter()
-	local char = player.Character or player.CharacterAdded:Wait()
-	local hum = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid")
-	local hrp = char:FindFirstChild("HumanoidRootPart") or char:WaitForChild("HumanoidRootPart")
-	return char, hum, hrp
-end
-
-local character, humanoid, hrp = getCharacter()
-
-local function applyStartingHealth()
-	if humanoid and humanoid.Parent then
-		humanoid.MaxHealth = 275
-		humanoid.Health = 275
-	end
-end
-
-applyStartingHealth()
-
-local chaosFolder = Instance.new("Folder")
-chaosFolder.Name = "RampingChaosLocal"
-chaosFolder.Parent = workspace
-
-local musicFolder = Instance.new("Folder")
-musicFolder.Name = "PhaseMusicLocal"
-musicFolder.Parent = SoundService
-
-local phaseSounds: { [string]: Sound } = {}
-
-local function makePhaseSound(name: string, id: string)
-	local s = Instance.new("Sound")
-	s.Name = name .. "Music"
-	s.SoundId = id
-	s.Volume = 0
-	s.Looped = true
-	s.Parent = musicFolder
-	phaseSounds[name] = s
-	return s
-end
-
-makePhaseSound("Calm", MUSIC.Calm)
-makePhaseSound("Warmup", MUSIC.Warmup)
-makePhaseSound("Escalation", MUSIC.Escalation)
-makePhaseSound("Apocalypse", MUSIC.Apocalypse)
-
-local function playPhaseMusic(name: string)
-	if activePhase == name or shuttingDown then
+local function stopSound(sound)
+	if not sound then
 		return
 	end
-
-	activePhase = name
-	for phaseName, sound in pairs(phaseSounds) do
-		if phaseName == name then
-			if not sound.IsPlaying then
-				sound:Play()
-			end
-
-			TweenService:Create(sound, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-				Volume = PHASE_VOLUME[phaseName] or 0.7,
-			}):Play()
-		else
-			if sound.IsPlaying then
-				local tw = TweenService:Create(sound, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Volume = 0,
-				})
-				tw:Play()
-				task.delay(0.55, function()
-					pcall(function()
-						sound:Stop()
-					end)
-				end)
-			end
-		end
-	end
-end
-
-local function mkSound(id: string, parent: Instance, volume: number, speed: number?, looped: boolean?)
-	local s = Instance.new("Sound")
-	s.SoundId = id
-	s.Volume = volume
-	s.PlaybackSpeed = speed or 1
-	s.Looped = looped or false
-	s.Parent = parent
-	s:Play()
-	return s
-end
-
-local function mkPart(
-	size: Vector3,
-	cf: CFrame,
-	color: Color3,
-	material: Enum.Material,
-	anchored: boolean,
-	canCollide: boolean,
-	transparency: number?
-)
-	local p = Instance.new("Part")
-	p.Size = size
-	p.CFrame = cf
-	p.Color = color
-	p.Material = material
-	p.Anchored = anchored
-	p.CanCollide = canCollide
-	p.CanTouch = false
-	p.CanQuery = false
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	p.Transparency = transparency or 0
-	p.Parent = chaosFolder
-	return p
-end
-
-local function applyLocalDamage(amount: number)
-	if humanoid and humanoid.Parent then
-		humanoid:TakeDamage(amount)
-	end
-end
-
-local function applyKnockback(direction: Vector3, force: number)
-	if hrp and hrp.Parent and direction.Magnitude > 0.001 then
-		local bv = Instance.new("BodyVelocity")
-		bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-		bv.P = 12500
-		bv.Velocity = direction.Unit * force + Vector3.new(0, math.random(6, 24), 0)
-		bv.Parent = hrp
-		Debris:AddItem(bv, 0.16)
-	end
-end
-
-local function explosionFlash(pos: Vector3, radius: number, pressure: number)
-	local boom = Instance.new("Explosion")
-	boom.Position = pos
-	boom.BlastRadius = radius
-	boom.BlastPressure = pressure
-	boom.DestroyJointRadiusPercent = 0
-	boom.Parent = workspace
-
-	local flash = mkPart(Vector3.new(1, 1, 1), CFrame.new(pos), Color3.new(1, 0.75, 0.2), Enum.Material.Neon, true, false, 0.2)
-	flash.Shape = Enum.PartType.Ball
-
-	TweenService:Create(flash, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Transparency = 1,
-		Size = Vector3.new(radius * 6, radius * 6, radius * 6),
-	}):Play()
-
-	mkSound(SND.Explosion, flash, 1.8, 0.9 + math.random() * 0.25, false)
-	Debris:AddItem(flash, 0.5)
-	return boom
-end
-
-local function shockwave(pos: Vector3, startSize: number, endSize: number, color: Color3, life: number)
-	local wave = mkPart(Vector3.new(startSize, startSize, startSize), CFrame.new(pos), color, Enum.Material.Neon, true, false, 0.45)
-	wave.Shape = Enum.PartType.Ball
-	TweenService:Create(wave, TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Transparency = 1,
-		Size = Vector3.new(endSize, endSize, endSize),
-	}):Play()
-	Debris:AddItem(wave, life + 0.05)
-end
-
-local function mushroomCloud(pos: Vector3)
-	local stem = mkPart(Vector3.new(8, 18, 8), CFrame.new(pos), Color3.fromRGB(210, 180, 120), Enum.Material.SmoothPlastic, true, false, 0.1)
-	stem.Shape = Enum.PartType.Cylinder
-	stem.CFrame = CFrame.new(pos + Vector3.new(0, 8, 0)) * CFrame.Angles(0, 0, math.rad(90))
-
-	local cap = mkPart(Vector3.new(18, 18, 18), CFrame.new(pos + Vector3.new(0, 18, 0)), Color3.fromRGB(255, 140, 40), Enum.Material.Neon, true, false, 0.2)
-	cap.Shape = Enum.PartType.Ball
-
-	local cap2 = mkPart(Vector3.new(28, 10, 28), CFrame.new(pos + Vector3.new(0, 24, 0)), Color3.fromRGB(120, 120, 120), Enum.Material.SmoothPlastic, true, false, 0.35)
-	cap2.Shape = Enum.PartType.Ball
-
-	TweenService:Create(stem, TweenInfo.new(2.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Transparency = 1,
-		Size = Vector3.new(12, 40, 12),
-		CFrame = stem.CFrame + Vector3.new(0, 18, 0),
-	}):Play()
-
-	TweenService:Create(cap, TweenInfo.new(2.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Transparency = 1,
-		Size = Vector3.new(34, 34, 34),
-		CFrame = cap.CFrame + Vector3.new(0, 18, 0),
-	}):Play()
-
-	TweenService:Create(cap2, TweenInfo.new(2.8, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-		Transparency = 1,
-		Size = Vector3.new(48, 20, 48),
-		CFrame = cap2.CFrame + Vector3.new(0, 30, 0),
-	}):Play()
-
-	Debris:AddItem(stem, 3)
-	Debris:AddItem(cap, 3)
-	Debris:AddItem(cap2, 3)
-
-	mkSound(SND.Explosion, stem, 1.2, 0.8, false)
-	mkSound(SND.Horn, cap, 0.9, 1, false)
-end
-
-local function warningMarker(pos: Vector3, life: number)
-	local marker = mkPart(Vector3.new(1, 1, 1), CFrame.new(pos), Color3.fromRGB(255, 60, 60), Enum.Material.Neon, true, false, 0.35)
-	marker.Shape = Enum.PartType.Ball
-
-	local flashCount = math.max(1, math.floor(life / 0.1))
-	task.spawn(function()
-		for i = 1, flashCount do
-			if not marker.Parent then
-				return
-			end
-
-			if i % 2 == 1 then
-				marker.Color = Color3.fromRGB(255, 70, 70)
-			else
-				marker.Color = Color3.fromRGB(255, 220, 40)
-			end
-
-			local alpha = i / flashCount
-			marker.Transparency = 0.35 + alpha * 0.35
-			marker.Size = Vector3.new(3, 3, 3) + Vector3.new(1, 1, 1) * (alpha * 7)
-			task.wait(0.1)
-		end
-
-		if marker.Parent then
-			TweenService:Create(marker, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-				Transparency = 1,
-				Size = Vector3.new(12, 12, 12),
-			}):Play()
-			Debris:AddItem(marker, 0.1)
-		end
-	end)
-
-	Debris:AddItem(marker, life + 0.2)
-	return marker
-end
-
-local function createProjectile(origin: Vector3, target: Vector3, speed: number, radius: number, damage: number)
-	local proj = mkPart(Vector3.new(radius, radius, radius), CFrame.new(origin), Color3.fromRGB(255, 70, 70), Enum.Material.Neon, true, false, 0)
-	proj.Shape = Enum.PartType.Ball
-
-	local a0 = Instance.new("Attachment")
-	a0.Position = Vector3.new(0, radius * 0.5, 0)
-	a0.Parent = proj
-
-	local a1 = Instance.new("Attachment")
-	a1.Position = Vector3.new(0, -radius * 0.5, 0)
-	a1.Parent = proj
-
-	local trail = Instance.new("Trail")
-	trail.Attachment0 = a0
-	trail.Attachment1 = a1
-	trail.Lifetime = 0.3
-	trail.MinLength = 0.1
-	trail.Parent = proj
-
-	mkSound(SND.Missile, proj, 1.2, 0.95 + math.random() * 0.2, false)
-
-	local dir = target - origin
-	if dir.Magnitude < 0.001 then
-		dir = Vector3.new(0, 0, -1)
-	end
-	dir = dir.Unit
-
-	local life = 0
-	local conn: RBXScriptConnection?
-	conn = RunService.Heartbeat:Connect(function(dt)
-		if not alive() or not proj.Parent then
-			if conn then
-				conn:Disconnect()
-			end
-			if proj.Parent then
-				proj:Destroy()
-			end
-			return
-		end
-
-		life += dt
-		proj.CFrame = proj.CFrame + (dir * speed * dt)
-
-		if hrp and hrp.Parent then
-			local dist = (proj.Position - hrp.Position).Magnitude
-			if dist < 4.5 then
-				local hitPos = proj.Position
-				explosionFlash(hitPos, 10 + radius * 4, 500000)
-				shockwave(hitPos, 4, 18, Color3.new(1, 0.65, 0.2), 0.3)
-				applyLocalDamage(damage)
-				applyKnockback(hrp.Position - hitPos, 70 + radius * 18)
-				if math.random() < 0.3 then
-					mushroomCloud(hitPos)
-				end
-				if conn then
-					conn:Disconnect()
-				end
-				proj:Destroy()
-				return
-			end
-		end
-
-		if life > 10 then
-			if conn then
-				conn:Disconnect()
-			end
-			proj:Destroy()
-		end
+	removeSoundFromActive(sound)
+	pcall(function()
+		sound:Stop()
+		sound:Destroy()
 	end)
 end
 
-local function telegraphedMissile(origin: Vector3, target: Vector3, speed: number, radius: number, damage: number, delayTime: number)
-	warningMarker(origin, delayTime)
-	task.delay(delayTime, function()
-		if not alive() then
-			return
-		end
-		createProjectile(origin, target, speed, radius, damage)
-	end)
-end
-
-local function createCubeDrone(spawnOffset: Vector3, size: number, speed: number, damage: number)
-	local cube = mkPart(Vector3.new(size, size, size), hrp.CFrame * CFrame.new(spawnOffset), Color3.fromRGB(math.random(80, 255), math.random(20, 120), math.random(20, 120)), Enum.Material.Metal, true, false, 0)
-	cube.Shape = Enum.PartType.Block
-	mkSound(SND.Worm, cube, 0.6, 0.9 + math.random() * 0.25, true)
-
-	local t = 0
-	local spin = Vector3.new(math.random(-18, 18), math.random(-18, 18), math.random(-18, 18))
-	local conn: RBXScriptConnection?
-	conn = RunService.Heartbeat:Connect(function(dt)
-		if not alive() or not cube.Parent or not hrp.Parent then
-			if conn then
-				conn:Disconnect()
-			end
-			if cube.Parent then
-				cube:Destroy()
-			end
-			return
-		end
-
-		t += dt
-		local orbitRadius = 70 + math.sin(t * 2.5) * 25
-		local angle = t * (1.3 + math.random() * 0.6)
-		local goal = hrp.Position + Vector3.new(math.cos(angle) * orbitRadius, math.sin(t * 4) * 8 + 6, math.sin(angle) * orbitRadius)
-		local stepDir = goal - cube.Position
-
-		if stepDir.Magnitude > 0.1 then
-			cube.CFrame = CFrame.new(cube.Position + stepDir.Unit * speed * dt, hrp.Position)
-				* CFrame.Angles(math.rad(spin.X * dt), math.rad(spin.Y * dt), math.rad(spin.Z * dt))
-		end
-
-		if (cube.Position - hrp.Position).Magnitude < 4.5 then
-			local hitPos = cube.Position
-			explosionFlash(hitPos, 7, 220000)
-			shockwave(hitPos, 3, 16, Color3.new(1, 1, 1), 0.25)
-			applyLocalDamage(damage)
-			applyKnockback(hrp.Position - hitPos, 55)
-			if math.random() < 0.5 then
-				mushroomCloud(hitPos)
-			end
-			if conn then
-				conn:Disconnect()
-			end
-			cube:Destroy()
-			return
-		end
-
-		if t > 12 then
-			explosionFlash(cube.Position, 4, 90000)
-			if conn then
-				conn:Disconnect()
-			end
-			cube:Destroy()
-		end
-	end)
-end
-
-local function swarmOfCubes(count: number)
-	for i = 1, count do
-		local theta = (i / count) * math.pi * 2
-		local offset = Vector3.new(
-			math.cos(theta) * (80 + math.random(-10, 10)),
-			math.random(-3, 14),
-			math.sin(theta) * (80 + math.random(-10, 10))
-		)
-		createCubeDrone(offset, math.random(2, 5), 12 + math.random(0, 12), math.random(1, 6))
-	end
-end
-
-local function missileRing(count: number)
-	for i = 1, count do
-		local theta = (i / count) * math.pi * 2
-		local origin = hrp.Position + Vector3.new(math.cos(theta) * 110, 30 + math.random(-8, 12), math.sin(theta) * 110)
-		local target = hrp.Position + Vector3.new(math.random(-4, 4), math.random(-2, 5), math.random(-4, 4))
-		telegraphedMissile(origin, target, 70 + math.random(0, 50), math.random(2, 4), math.random(2, 7), 0.35 + math.random() * 0.35)
-	end
-end
-
-local function missileStorm()
-	for i = 1, math.random(8, 16) do
-		task.delay(i * 0.08, function()
-			if not alive() then
-				return
-			end
-			local origin = hrp.Position + Vector3.new(math.random(-140, 140), math.random(30, 70), math.random(-140, 140))
-			local target = hrp.Position + Vector3.new(math.random(-4, 4), math.random(-2, 5), math.random(-4, 4))
-			telegraphedMissile(origin, target, 90 + math.random(0, 60), 3, math.random(2, 8), 0.4 + math.random() * 0.5)
-		end)
-	end
-end
-
-local function explosionRain()
-		task.delay(math.random() * 0.9, function()
-			if not alive() then
-				return
-			end
-			local pos = hrp.Position + Vector3.new(math.random(-40, 40), math.random(12, 32), math.random(-40, 40))
-			warningMarker(pos, 3)
-			task.delay(3, function()
-				if alive() then
-					explosionFlash(pos, 10 + math.random(0, 7), 180000)
-					if math.random() < 0.35 then
-						mushroomCloud(pos)
-					end
-				end
-			end)
-		end)
-end
-
-local function orbitingSatelliteSpawner(index: number)
-	local sat = mkPart(Vector3.new(3, 3, 3), hrp.CFrame, Color3.fromRGB(255, 255, 255), Enum.Material.Neon, true, false, 0.15)
-	sat.Shape = Enum.PartType.Ball
-
-	local light = Instance.new("PointLight")
-	light.Range = 20
-	light.Brightness = 1.5
-	light.Parent = sat
-
-	local ang = index * (math.pi * 2 / 10)
-	local radius = 70 + (index % 4) * 18
-	local life = 0
-
-	local conn: RBXScriptConnection?
-	conn = RunService.Heartbeat:Connect(function(dt)
-		if not alive() or not sat.Parent or not hrp.Parent then
-			if conn then
-				conn:Disconnect()
-			end
-			if sat.Parent then
-				sat:Destroy()
-			end
-			return
-		end
-
-		life += dt
-		ang += dt * (0.6 + index * 0.04)
-
-		local orbitPos = hrp.Position + Vector3.new(math.cos(ang) * radius, math.sin(life * 2.2) * 8 + 18, math.sin(ang) * radius)
-		sat.CFrame = CFrame.new(orbitPos)
-
-		if progress() > 0.15 and math.random() < 0.012 + progress() * 0.02 then
-			local target = hrp.Position + Vector3.new(math.random(-4, 4), math.random(-1, 4), math.random(-4, 4))
-			telegraphedMissile(orbitPos, target, 85 + progress() * 45, 2, 1 + math.floor(progress() * 5), 0.45)
-		end
-
-		if math.random() < 0.008 then
-			mkSound(SND.Worm, sat, 0.6, 0.85 + math.random() * 0.25, false)
-		end
-	end)
-end
-
-local function buildSatelliteNet()
-	for i = 1, 10 do
-		orbitingSatelliteSpawner(i)
-	end
-end
-
-local function cameraShake(intensity: number, rate: number)
-	local t = 0
-	local conn: RBXScriptConnection?
-	conn = RunService.RenderStepped:Connect(function(dt)
-		if not alive() or not camera or not hrp.Parent then
-			if conn then
-				conn:Disconnect()
-			end
-			return
-		end
-		t += dt * rate
-		local p = progress()
-		local amount = intensity * (0.2 + p * 1.2)
-		camera.CFrame = camera.CFrame * CFrame.new(
-			(math.noise(t, 1, 1) - 0.5) * amount,
-			(math.noise(1, t, 1) - 0.5) * amount,
-			(math.noise(1, 1, t) - 0.5) * amount
-		)
-	end)
-end
-
-local function screenChaos()
-	local blur = Instance.new("BlurEffect")
-	blur.Size = 0
-	blur.Parent = Lighting
-
-	local cc = Instance.new("ColorCorrectionEffect")
-	cc.Brightness = 0
-	cc.Contrast = 0
-	cc.Saturation = 0
-	cc.TintColor = Color3.fromRGB(255, 220, 200)
-	cc.Parent = Lighting
-
-	TweenService:Create(blur, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = 14 }):Play()
-	TweenService:Create(cc, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Brightness = 0.08,
-		Contrast = 0.18,
-		Saturation = -0.1,
-	}):Play()
-
-	Debris:AddItem(blur, DURATION + 2)
-	Debris:AddItem(cc, DURATION + 2)
-end
-
-local function warningHorn()
-	mkSound(SND.Horn, hrp, 1.1, 1, false)
-end
-
-local function shriek()
-	mkSound(SND.Shriek, hrp, 1.0, 1 + math.random(-8, 8) / 100, false)
-end
-
-local function wormBuzz()
-	mkSound(SND.Worm, hrp, 0.7, 0.85 + math.random() * 0.25, false)
-end
-
-local function localNukeSequence()
-	local pos = hrp.Position + Vector3.new(math.random(-14, 14), math.random(2, 8), math.random(-14, 14))
-	warningMarker(pos, 2)
-	task.delay(2, function()
-		if not alive() then
-			return
-		end
-		explosionFlash(pos, 16, 600000)
-		shockwave(pos, 8, 90, Color3.fromRGB(255, 180, 80), 0.8)
-		mushroomCloud(pos)
-		applyLocalDamage(math.random(2, 5))
-		applyKnockback(Vector3.new(math.random(-1, 1), 1, math.random(-1, 1)), 85)
-	end)
-end
-
-local redGui: ScreenGui? = nil
-local redFrame: Frame? = nil
-
-local function createShutdownFlash(flashColor: Color3)
-	if redGui then
-		redGui:Destroy()
-	end
-
-	redGui = Instance.new("ScreenGui")
-	redGui.Name = "ShutdownFlashGui"
-	redGui.IgnoreGuiInset = true
-	redGui.ResetOnSpawn = false
-	redGui.DisplayOrder = 999999
-	redGui.Parent = PlayerGui
-
-	redFrame = Instance.new("Frame")
-	redFrame.Size = UDim2.fromScale(1, 1)
-	redFrame.BackgroundColor3 = flashColor
-	redFrame.BackgroundTransparency = 1
-	redFrame.BorderSizePixel = 0
-	redFrame.Parent = redGui
-
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 0
-	stroke.Transparency = 1
-	stroke.Parent = redFrame
-
-	TweenService:Create(redFrame, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 0.2,
-	}):Play()
-
-	task.delay(0.12, function()
-		if redFrame and redFrame.Parent then
-			TweenService:Create(redFrame, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-				BackgroundTransparency = 1,
-			}):Play()
-		end
-	end)
-end
-
-local function stopAllMusic()
-	for _, sound in pairs(phaseSounds) do
+local function stopAllSounds()
+	for i = #activeSounds, 1, -1 do
+		local s = activeSounds[i]
 		pcall(function()
-			sound.Volume = 0
-			sound:Stop()
+			if s then
+				s:Stop()
+				s:Destroy()
+			end
 		end)
+		table.remove(activeSounds, i)
 	end
 end
 
 local function cleanupAll()
-	if cleanupDone then
+	if cleanedUp then
 		return
 	end
-	cleanupDone = true
+	cleanedUp = true
+	alive = false
 
-	for _, conn in ipairs(connections) do
+	pcall(function()
+		humanoid.CameraOffset = Vector3.zero
+	end)
+
+	for i = #trackedConnections, 1, -1 do
+		local conn = trackedConnections[i]
 		pcall(function()
 			conn:Disconnect()
 		end)
-	end
-	table.clear(connections)
-
-	stopAllMusic()
-
-	if redGui then
-		redGui:Destroy()
-		redGui = nil
-		redFrame = nil
+		table.remove(trackedConnections, i)
 	end
 
-	if chaosFolder and chaosFolder.Parent then
-		chaosFolder:Destroy()
-	end
+	stopAllSounds()
 
-	if musicFolder and musicFolder.Parent then
-		musicFolder:Destroy()
-	end
-end
-
-local function beginShutdown(won: boolean)
-	if shuttingDown then
-		return
-	end
-	shuttingDown = true
-	running = false
-
-	stopAllMusic()
-
-	if won then
-		createShutdownFlash(Color3.fromRGB(70, 255, 110))
-	else
-		createShutdownFlash(Color3.fromRGB(255, 0, 0))
-	end
-
-	task.delay(0.55, function()
-		cleanupAll()
-	end)
-end
-
-track(humanoid.Died:Connect(function()
-	beginShutdown(false)
-end))
-
-screenChaos()
-cameraShake(0.035, 10)
-buildSatelliteNet()
-warningHorn()
-
-track(RunService.RenderStepped:Connect(function()
-	if shuttingDown then
-		return
-	end
-
-	local phase = currentPhase()
-	playPhaseMusic(phase)
-end))
-
-local function spawnWhiteSquareParticle(origin: Vector3, target: Vector3, speed: number, size: number, damage: number)
-	local part = mkPart(Vector3.new(size, size, size), CFrame.new(origin), Color3.fromRGB(255, 255, 255), Enum.Material.Neon, true, false, 0.1)
-	part.Shape = Enum.PartType.Block
-
-	local spin = Vector3.new(math.random(-20, 20), math.random(-20, 20), math.random(-20, 20))
-	local dir = (target - origin)
-	if dir.Magnitude < 0.001 then
-		dir = Vector3.new(0, 1, 0)
-	end
-	dir = dir.Unit
-
-	mkSound(SND.Missile, part, 0.8, 1.1, false)
-
-	local life = 0
-	local conn: RBXScriptConnection?
-	conn = RunService.Heartbeat:Connect(function(dt)
-		if not alive() or not part.Parent then
-			if conn then
-				conn:Disconnect()
-			end
-			if part.Parent then
-				part:Destroy()
-			end
-			return
-		end
-
-		life += dt
-		part.CFrame = part.CFrame * CFrame.Angles(math.rad(spin.X * dt), math.rad(spin.Y * dt), math.rad(spin.Z * dt))
-		part.CFrame = CFrame.new(part.Position + dir * speed * dt) * (part.CFrame - part.CFrame.Position)
-
-		if hrp and hrp.Parent and (part.Position - hrp.Position).Magnitude < 4 then
-			local hitPos = part.Position
-			explosionFlash(hitPos, 4, 60000)
-			shockwave(hitPos, 2, 10, Color3.fromRGB(255, 255, 255), 0.18)
-			applyLocalDamage(damage)
-			if conn then
-				conn:Disconnect()
-			end
-			part:Destroy()
-			return
-		end
-
-		if life > 7 then
-			if conn then
-				conn:Disconnect()
-			end
-			part:Destroy()
-		end
-	end)
-end
-
-local function spewNeonSpheres(origin: Vector3, target: Vector3, count: number)
-	for i = 1, count do
-		task.delay((i - 1) * 0.04, function()
-			if not alive() then
-				return
-			end
-
-			local spread = Vector3.new(
-				math.random(-10, 10),
-				math.random(-6, 8),
-				math.random(-10, 10)
-			)
-
-			local sphereOrigin = origin + spread * 0.5
-			local sphereTarget = target + Vector3.new(math.random(-5, 5), math.random(-2, 5), math.random(-5, 5))
-			createProjectile(sphereOrigin, sphereTarget, 95 + math.random(0, 35), 1.5, math.random(1, 3))
-		end)
-	end
-end
-
-local function whiteExplosionBurst(origin: Vector3)
-	for i = 1, 20 do
-		local theta = (i / 20) * math.pi * 2
-		local up = (i % 5) * 1.5
-		local offset = Vector3.new(math.cos(theta) * 6, up, math.sin(theta) * 6)
-		spawnWhiteSquareParticle(origin + offset, origin + offset + Vector3.new(math.random(-18, 18), math.random(8, 26), math.random(-18, 18)), 90 + math.random(0, 60), math.random(1, 2), 2)
-	end
-end
-
-local function spawnApocalypseRedOrb(index: number)
-	local spawnPos = hrp.Position + Vector3.new(math.random(-65, 65), math.random(18, 40), math.random(-65, 65))
-	local orb = mkPart(Vector3.new(8, 8, 8), CFrame.new(spawnPos), Color3.fromRGB(220, 20, 20), Enum.Material.Neon, true, false, 0.1)
-	orb.Shape = Enum.PartType.Ball
-
-	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(255, 40, 40)
-	light.Range = 28
-	light.Brightness = 2.5
-	light.Parent = orb
-
-	local promptSound = mkSound(SND.Worm, orb, 0.5, 0.95 + math.random() * 0.2, true)
-
-	local state = "orbit" -- orbit | telegraph_dash | dash | telegraph_spew | spew | telegraph_freeze | freeze
-	local nextActionTime = os.clock() + math.random(2, 5)
-	local actionEndTime = 0.0
-	local dashTarget = Vector3.zero
-	local orbitAngle = (index / 5) * math.pi * 2 + math.random() * 0.75
-	local orbitRadius = 58 + index * 5
-	local dashSpeed = 120
-	local spewEndTime = 0.0
-	local spewLastShot = 0.0
-	local freezeLastSpark = 0.0
-	local freezeEndTime = 0.0
-	local orbitHeight = 18 + index * 2
-
-	local function resetToOrbit()
-		state = "orbit"
-		nextActionTime = os.clock() + math.random(2, 5)
-		orb.Color = Color3.fromRGB(220, 20, 20)
-		light.Color = Color3.fromRGB(255, 40, 40)
-		light.Brightness = 2.5
-		orb.Transparency = 0.1
+	for i = #trackedInstances, 1, -1 do
+		local inst = trackedInstances[i]
 		pcall(function()
-			promptSound.PlaybackSpeed = 0.95 + math.random() * 0.2
+			if inst and inst.Parent then
+				inst:Destroy()
+			end
 		end)
+		table.remove(trackedInstances, i)
+	end
+end
+
+--========================
+-- Helpers
+--========================
+local function randf(a, b)
+	return rng:NextNumber(a, b)
+end
+
+local function randi(a, b)
+	return rng:NextInteger(a, b)
+end
+
+local function safeUnit(v, fallback)
+	fallback = fallback or Vector3.new(0, 0, -1)
+	if typeof(v) ~= "Vector3" then
+		return fallback
+	end
+	local m = v.Magnitude
+	if m < 1e-6 then
+		return fallback
+	end
+	return v / m
+end
+
+local function randomUnit2D()
+	local angle = randf(0, math.pi * 2)
+	return Vector3.new(math.cos(angle), 0, math.sin(angle))
+end
+
+local function makeSpreadDirection(baseDir, maxAngleDeg)
+	baseDir = safeUnit(baseDir, Vector3.new(0, 0, -1))
+	local yaw = math.rad(randf(-maxAngleDeg, maxAngleDeg))
+	local pitch = math.rad(randf(-maxAngleDeg, maxAngleDeg))
+	local look = CFrame.lookAt(Vector3.zero, baseDir)
+	local spreadCf = look * CFrame.Angles(pitch, yaw, 0)
+	return safeUnit(spreadCf.LookVector, baseDir)
+end
+
+local function playSound(id, volume, speed, parent, looped)
+	local sound = Instance.new("Sound")
+	sound.SoundId = "rbxassetid://" .. tostring(id)
+	sound.Volume = volume or 3
+	sound.PlaybackSpeed = speed or 1
+	sound.Looped = looped or false
+	sound.Parent = parent or workspace
+	sound:Play()
+
+	table.insert(activeSounds, sound)
+
+	sound.Ended:Connect(function()
+		removeSoundFromActive(sound)
+		pcall(function()
+			sound:Destroy()
+		end)
+	end)
+
+	return sound
+end
+
+local function makeVisualPart(sizeVec, color3, transparency, billboardPx, imageColor3, imageId)
+	local part = trackInstance(Instance.new("Part"))
+	part.Name = "ChaosVisual"
+	part.Size = sizeVec
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanTouch = false
+	part.CanQuery = false
+	part.Material = Enum.Material.Neon
+	part.Color = color3
+	part.Transparency = transparency or 0
+	part.Parent = workspace
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "ChaosBillboard"
+	billboard.Adornee = part
+	billboard.AlwaysOnTop = false
+	billboard.LightInfluence = 0
+	billboard.Size = UDim2.fromScale(billboardPx, billboardPx)
+	billboard.StudsOffsetWorldSpace = Vector3.zero
+	billboard.MaxDistance = 100000
+	billboard.Parent = part
+
+	local image = Instance.new("ImageLabel")
+	image.Name = "Icon"
+	image.BackgroundTransparency = 1
+	image.Size = UDim2.fromScale(1, 1)
+	image.Image = imageId or "rbxassetid://954619039"
+	image.ImageColor3 = imageColor3 or Color3.new(1, 1, 1)
+	image.ScaleType = Enum.ScaleType.Fit
+	image.Parent = billboard
+
+	return part, billboard, image
+end
+
+--========================
+-- UI tint
+--========================
+local screenGui = trackInstance(Instance.new("ScreenGui"))
+screenGui.Name = "ChaosHunterGui"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local tintFrame = trackInstance(Instance.new("Frame"))
+tintFrame.Size = UDim2.fromScale(1, 1)
+tintFrame.BackgroundTransparency = 1
+tintFrame.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+tintFrame.BorderSizePixel = 0
+tintFrame.Parent = screenGui
+
+--========================
+-- Camera shake
+--========================
+local shakeConn
+local function screenShake(duration, intensity)
+	if not alive then
+		return
 	end
 
-	local conn: RBXScriptConnection?
-	conn = RunService.Heartbeat:Connect(function(dt)
-		if not alive() or not orb.Parent or not hrp.Parent then
-			if conn then
-				conn:Disconnect()
+	if shakeConn then
+		shakeConn:Disconnect()
+		shakeConn = nil
+	end
+
+	local startT = os.clock()
+	shakeConn = trackConnection(RunService.RenderStepped:Connect(function()
+		if not alive then
+			if humanoid then
+				humanoid.CameraOffset = Vector3.zero
 			end
-			if orb.Parent then
-				orb:Destroy()
+			if shakeConn then
+				shakeConn:Disconnect()
+				shakeConn = nil
 			end
 			return
 		end
 
-		local now = os.clock()
-		local targetPos = hrp.Position
+		if os.clock() - startT >= duration then
+			humanoid.CameraOffset = Vector3.zero
+			if shakeConn then
+				shakeConn:Disconnect()
+				shakeConn = nil
+			end
+			return
+		end
 
-		if state == "orbit" then
-			orbitAngle += dt * (0.8 + index * 0.08)
-			local waveY = math.sin(now * 2.2 + index) * 6
-			local orbitPos = targetPos + Vector3.new(math.cos(orbitAngle) * orbitRadius, orbitHeight + waveY, math.sin(orbitAngle) * orbitRadius)
-			orb.CFrame = CFrame.new(orb.Position:Lerp(orbitPos, math.clamp(dt * 4, 0, 1)), targetPos)
+		humanoid.CameraOffset = Vector3.new(
+			randf(-intensity, intensity) / 10,
+			randf(-intensity, intensity) / 10,
+			0
+		)
+	end))
+end
 
-			if now >= nextActionTime and progress() > 0.75 then
-				local choice = math.random(1, 3)
-				if choice == 1 then
-					state = "telegraph_dash"
-					actionEndTime = now + 0.7
-					dashTarget = targetPos + Vector3.new(math.random(-8, 8), math.random(-2, 6), math.random(-8, 8))
-					orb.Color = Color3.fromRGB(255, 140, 30)
-					light.Color = Color3.fromRGB(255, 170, 60)
-					light.Brightness = 4
-					warningMarker(orb.Position, 0.7)
-				elseif choice == 2 then
-					state = "telegraph_spew"
-					actionEndTime = now + 0.45
-					orb.Color = Color3.fromRGB(255, 210, 60)
-					light.Color = Color3.fromRGB(255, 220, 70)
-					light.Brightness = 4
-					warningMarker(orb.Position, 0.45)
-				else
-					state = "telegraph_freeze"
-					actionEndTime = now + 0.8
-					orb.Color = Color3.fromRGB(255, 255, 255)
-					light.Color = Color3.fromRGB(255, 255, 255)
-					light.Brightness = 6
-					warningMarker(orb.Position, 0.8)
+--========================
+-- Explosion helper
+--========================
+local function createExplosion(pos, radius, damage, knockStrength, soundId, particleColor, isGiant)
+	if not alive then
+		return
+	end
+
+	playSound(soundId or 140653132496955, isGiant and 8 or 4, 1, workspace, false)
+
+	local sphere = trackInstance(Instance.new("Part"))
+	sphere.Name = "ChaosExplosionSphere"
+	sphere.Shape = Enum.PartType.Ball
+	sphere.Size = Vector3.new(1, 1, 1)
+	sphere.CFrame = CFrame.new(pos)
+	sphere.Material = Enum.Material.Neon
+	sphere.Color = particleColor or Color3.fromRGB(255, 100, 0)
+	sphere.Transparency = 0.3
+	sphere.Anchored = true
+	sphere.CanCollide = false
+	sphere.CanTouch = false
+	sphere.CanQuery = false
+	sphere.Parent = workspace
+
+	local sphereTween = TweenService:Create(
+		sphere,
+		TweenInfo.new(isGiant and 1.2 or 0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Size = Vector3.new(radius * 2, radius * 2, radius * 2), Transparency = 1 }
+	)
+	sphereTween:Play()
+	sphereTween.Completed:Connect(function()
+		pcall(function()
+			sphere:Destroy()
+		end)
+	end)
+
+	local particlePart = trackInstance(Instance.new("Part"))
+	particlePart.Name = "ChaosExplosionParticles"
+	particlePart.Size = Vector3.new(0.1, 0.1, 0.1)
+	particlePart.Transparency = 1
+	particlePart.Anchored = true
+	particlePart.CanCollide = false
+	particlePart.CanTouch = false
+	particlePart.CanQuery = false
+	particlePart.Position = pos
+	particlePart.Parent = workspace
+
+	local pe = Instance.new("ParticleEmitter")
+	pe.Texture = "rbxassetid://954619039"
+	pe.Color = ColorSequence.new(particleColor or Color3.fromRGB(255, 120, 0))
+	pe.LightEmission = 1
+	pe.Size = NumberSequence.new(isGiant and 4 or 2.5)
+	pe.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	pe.Lifetime = NumberRange.new(2.5, 3)
+	pe.Rate = 0
+	pe.Speed = NumberRange.new(isGiant and 85 or 45)
+	pe.SpreadAngle = Vector2.new(360, 360)
+	pe.Parent = particlePart
+	pe:Emit(isGiant and 120 or 55)
+
+	task.delay(3, function()
+		pcall(function()
+			particlePart:Destroy()
+		end)
+	end)
+
+	local dist = (humanoidRootPart.Position - pos).Magnitude
+	if dist < radius then
+		humanoid:TakeDamage(damage)
+		local dir = safeUnit(humanoidRootPart.Position - pos, Vector3.new(0, 1, 0))
+		humanoidRootPart.AssemblyLinearVelocity = dir * knockStrength + Vector3.new(0, 60, 0)
+	end
+end
+
+--========================
+-- Projectile helper
+--========================
+local function fireProjectile(origin, direction, speed, lifetime, size, color3, imageColor3, impactRadius, damage, knockStrength, soundId, giant, sourcePart)
+	direction = safeUnit(direction, Vector3.new(0, 0, -1))
+
+	local projPart = trackInstance(Instance.new("Part"))
+	projPart.Name = "ChaosProjectile"
+	projPart.Size = Vector3.new(size, size, size)
+	projPart.Anchored = true
+	projPart.CanCollide = false
+	projPart.CanTouch = false
+	projPart.CanQuery = false
+	projPart.Material = Enum.Material.Neon
+	projPart.Color = color3
+	projPart.Transparency = 0.15
+	projPart.CFrame = CFrame.new(origin, origin + direction)
+	projPart.Parent = workspace
+
+	local bb = Instance.new("BillboardGui")
+	bb.Adornee = projPart
+	bb.AlwaysOnTop = false
+	bb.LightInfluence = 0
+	bb.Size = UDim2.fromScale(giant and 260 or 200, giant and 260 or 200)
+	bb.StudsOffsetWorldSpace = Vector3.zero
+	bb.MaxDistance = 100000
+	bb.Parent = projPart
+
+	local img = Instance.new("ImageLabel")
+	img.Size = UDim2.fromScale(1, 1)
+	img.BackgroundTransparency = 1
+	img.Image = "rbxassetid://954619039"
+	img.ImageColor3 = imageColor3 or color3
+	img.ScaleType = Enum.ScaleType.Fit
+	img.Parent = bb
+
+	playSound(soundId or 140653132496955, giant and 4 or 2.5, 1, workspace, false)
+
+	local born = os.clock()
+	local prevPos = origin
+
+	task.spawn(function()
+		local rayParams = RaycastParams.new()
+		rayParams.FilterType = Enum.RaycastFilterType.Exclude
+		rayParams.FilterDescendantsInstances = sourcePart and { projPart, sourcePart } or { projPart }
+		rayParams.IgnoreWater = true
+
+		while alive and projPart.Parent do
+			local dt = RunService.Heartbeat:Wait()
+			if not alive then
+				break
+			end
+
+			local newPos = prevPos + direction * speed * dt
+			local hit = workspace:Raycast(prevPos, newPos - prevPos, rayParams)
+
+			prevPos = newPos
+			projPart.CFrame = CFrame.new(newPos, newPos + direction)
+
+			if hit then
+				createExplosion(
+					hit.Position,
+					impactRadius,
+					damage,
+					knockStrength,
+					soundId or 140653132496955,
+					color3,
+					giant
+				)
+				break
+			end
+
+			if (newPos - humanoidRootPart.Position).Magnitude <= impactRadius then
+				createExplosion(
+					newPos,
+					impactRadius,
+					damage,
+					knockStrength,
+					soundId or 140653132496955,
+					color3,
+					giant
+				)
+				break
+			end
+
+			if os.clock() - born >= lifetime then
+				break
+			end
+		end
+
+		pcall(function()
+			projPart:Destroy()
+		end)
+	end)
+end
+
+--========================
+-- Hunter creation
+--========================
+local hunter = trackInstance(Instance.new("Part"))
+hunter.Name = "ChaosHunter"
+hunter.Size = Vector3.new(5, 5, 5)
+hunter.Shape = Enum.PartType.Block
+hunter.Material = Enum.Material.Plastic
+hunter.Color = Color3.fromRGB(255, 255, 255)
+hunter.Transparency = 1
+hunter.Anchored = true
+hunter.CanCollide = false
+hunter.CanTouch = false
+hunter.CanQuery = false
+hunter.Parent = workspace
+
+local hunterBillboard = Instance.new("BillboardGui")
+hunterBillboard.Adornee = hunter
+hunterBillboard.AlwaysOnTop = false
+hunterBillboard.LightInfluence = 0
+hunterBillboard.Size = UDim2.fromScale(100, 100)
+hunterBillboard.StudsOffsetWorldSpace = Vector3.zero
+hunterBillboard.MaxDistance = 100000
+hunterBillboard.Parent = hunter
+
+local hunterImage = Instance.new("ImageLabel")
+hunterImage.Size = UDim2.fromScale(0.5, 0.5)
+hunterImage.BackgroundTransparency = 1
+hunterImage.Image = "rbxassetid://954619039"
+hunterImage.ImageColor3 = Color3.fromRGB(255, 255, 255)
+hunterImage.ScaleType = Enum.ScaleType.Fit
+hunterImage.Parent = hunterBillboard
+
+-- Spawn hunter around 80 studs away in a safe direction
+local spawnDir = safeUnit(randomUnit2D(), Vector3.new(1, 0, 0))
+hunter.Position = humanoidRootPart.Position + spawnDir * 80 + Vector3.new(0, 15, 0)
+
+--========================
+-- Character death / cleanup
+--========================
+trackConnection(humanoid.Died:Connect(function()
+	alive = false
+	cleanupAll()
+end))
+
+--========================
+-- Phase state
+--========================
+local startTime = os.clock()
+local phase = 1
+
+local currentSpeed = 20
+local musicSound = playSound(122940626704593, 4, 1, workspace, true)
+
+local lastProjectileTime = 0
+local lastRedBurstTime = 0
+local lastShotgunTime = 0
+local lastFallingRainTime = 0
+local orbitersSpawned = false
+local orbiters = {}
+
+local hunterHitCooldown = 0
+local orbitersActive = false
+
+local function swapMusic(id, volume)
+	stopSound(musicSound)
+	musicSound = playSound(id, volume or 4.5, 1, workspace, true)
+end
+
+local function createOrbiters()
+	if orbitersSpawned then
+		return
+	end
+	orbitersSpawned = true
+	orbitersActive = true
+
+	for i = 1, 4 do
+		local orb = trackInstance(Instance.new("Part"))
+		orb.Name = "ChaosOrbiter"
+		orb.Size = Vector3.new(2.5, 2.5, 2.5)
+		orb.Material = Enum.Material.Neon
+		orb.Color = Color3.fromRGB(180, 80, 255)
+		orb.Transparency = 0.3
+		orb.Anchored = true
+		orb.CanCollide = false
+		orb.CanTouch = false
+		orb.CanQuery = false
+		orb.Parent = workspace
+
+		local orbBillboard = Instance.new("BillboardGui")
+		orbBillboard.Adornee = orb
+		orbBillboard.AlwaysOnTop = true
+		orbBillboard.LightInfluence = 0
+		orbBillboard.Size = UDim2.fromOffset(220, 220)
+		orbBillboard.StudsOffsetWorldSpace = Vector3.zero
+		orbBillboard.MaxDistance = 100000
+		orbBillboard.Parent = orb
+
+		local orbImg = Instance.new("ImageLabel")
+		orbImg.Size = UDim2.fromScale(1, 1)
+		orbImg.BackgroundTransparency = 1
+		orbImg.Image = "rbxassetid://954619039"
+		orbImg.ImageColor3 = Color3.fromRGB(200, 100, 255)
+		orbImg.ScaleType = Enum.ScaleType.Fit
+		orbImg.Parent = orbBillboard
+
+		table.insert(orbiters, {
+			part = orb,
+			angle = (i - 1) * (math.pi * 2 / 4),
+			radius = 50,
+			height = 8 + i * 2,
+			speed = 1.6 + i * 0.2,
+		})
+	end
+
+	task.spawn(function()
+		while alive and orbitersActive and phase == 4 do
+			for _, orbData in ipairs(orbiters) do
+				if not alive or phase ~= 4 or not orbData.part or not orbData.part.Parent then
+					break
 				end
-			end
-
-		elseif state == "telegraph_dash" then
-			orb.CFrame = CFrame.new(orb.Position:Lerp(targetPos + Vector3.new(math.sin(now * 12 + index) * 4, 10, math.cos(now * 12 + index) * 4), math.clamp(dt * 2.8, 0, 1)), targetPos)
-			orb.Color = (math.floor(now * 10) % 2 == 0) and Color3.fromRGB(255, 90, 20) or Color3.fromRGB(255, 190, 40)
-			if now >= actionEndTime then
-				state = "dash"
-				dashTarget = targetPos + Vector3.new(math.random(-6, 6), math.random(-1, 4), math.random(-6, 6))
-				dashSpeed = 150 + progress() * 80
-			end
-
-		elseif state == "dash" then
-			local toTarget = dashTarget - orb.Position
-			local step = toTarget.Unit * dashSpeed * dt
-			if toTarget.Magnitude <= step.Magnitude then
-				local hitPos = orb.Position
-				explosionFlash(hitPos, 12, 260000)
-				shockwave(hitPos, 6, 30, Color3.fromRGB(255, 150, 40), 0.35)
-				applyLocalDamage(math.random(1, 4))
-				applyKnockback(hrp.Position - hitPos, 80)
-				if math.random() < 0.55 then
-					mushroomCloud(hitPos)
+				task.wait(randf(1.2, 3))
+				if not alive or phase ~= 4 then
+					break
 				end
-				resetToOrbit()
-			else
-				orb.CFrame = CFrame.new(orb.Position + step, hrp.Position)
-				if (orb.Position - hrp.Position).Magnitude < 6 then
-					local hitPos = orb.Position
-					explosionFlash(hitPos, 12, 260000)
-					shockwave(hitPos, 6, 30, Color3.fromRGB(255, 150, 40), 0.35)
-					applyLocalDamage(math.random(1, 4))
-					applyKnockback(hrp.Position - hitPos, 80)
-					if math.random() < 0.55 then
-						mushroomCloud(hitPos)
-					end
-					resetToOrbit()
-				end
-			end
 
-		elseif state == "telegraph_spew" then
-			orb.CFrame = CFrame.new(orb.Position:Lerp(targetPos + Vector3.new(math.sin(now * 9 + index) * 3, 11, math.cos(now * 9 + index) * 3), math.clamp(dt * 2.5, 0, 1)), targetPos)
-			orb.Color = (math.floor(now * 12) % 2 == 0) and Color3.fromRGB(255, 240, 90) or Color3.fromRGB(255, 130, 40)
-			if now >= actionEndTime then
-				state = "spew"
-				spewEndTime = now + 1.25 + progress() * 0.4
-				spewLastShot = 0
-			end
+				local orbPos = orbData.part.Position
+				local shootDir = safeUnit(humanoidRootPart.Position - orbPos, Vector3.new(0, 0, -1))
 
-		elseif state == "spew" then
-			orb.CFrame = CFrame.new(orb.Position:Lerp(targetPos + Vector3.new(math.sin(now * 7 + index) * 5, 12, math.cos(now * 7 + index) * 5), math.clamp(dt * 2.2, 0, 1)), targetPos)
-			orb.Color = Color3.fromRGB(255, 80, 80)
-			light.Color = Color3.fromRGB(255, 80, 80)
-			light.Brightness = 4
-
-			if now - spewLastShot > 0.06 then
-				spewLastShot = now
-				spewNeonSpheres(orb.Position, targetPos, math.random(2, 4))
-			end
-
-			if now >= spewEndTime then
-				resetToOrbit()
-			end
-
-		elseif state == "telegraph_freeze" then
-			orb.CFrame = CFrame.new(orb.Position:Lerp(targetPos + Vector3.new(math.sin(now * 10 + index) * 2, 13, math.cos(now * 10 + index) * 2), math.clamp(dt * 2, 0, 1)), targetPos)
-			if math.floor(now * 14) % 2 == 0 then
-				orb.Color = Color3.fromRGB(255, 255, 255)
-				light.Color = Color3.fromRGB(255, 255, 255)
-			else
-				orb.Color = Color3.fromRGB(255, 240, 240)
-				light.Color = Color3.fromRGB(255, 255, 255)
-			end
-
-			if now >= actionEndTime then
-				state = "freeze"
-				freezeEndTime = now + 0.55
-				freezeLastSpark = 0
-			end
-
-		elseif state == "freeze" then
-			orb.CFrame = CFrame.new(targetPos + Vector3.new(math.sin(now * 5 + index) * 1.5, 14, math.cos(now * 5 + index) * 1.5))
-			orb.Color = Color3.fromRGB(255, 255, 255)
-			light.Color = Color3.fromRGB(255, 255, 255)
-			light.Brightness = 7
-
-			if now - freezeLastSpark > 0.08 then
-				freezeLastSpark = now
-				local sparkOrigin = orb.Position + Vector3.new(math.random(-4, 4), math.random(-4, 4), math.random(-4, 4))
-				local sparkTarget = sparkOrigin + Vector3.new(math.random(-20, 20), math.random(8, 24), math.random(-20, 20))
-				spawnWhiteSquareParticle(sparkOrigin, sparkTarget, 100 + math.random(0, 50), math.random(1, 2), 1)
-			end
-
-			if now >= freezeEndTime then
-				local hitPos = orb.Position
-				warningMarker(hitPos, 0.2)
-				task.delay(0.2, function()
-					if not alive() then
-						return
-					end
-					explosionFlash(hitPos, 20, 650000)
-					shockwave(hitPos, 8, 42, Color3.fromRGB(255, 255, 255), 0.4)
-					whiteExplosionBurst(hitPos)
-					if math.random() < 0.7 then
-						mushroomCloud(hitPos)
-					end
-					applyLocalDamage(math.random(2, 5))
-					applyKnockback(hrp.Position - hitPos, 95)
-				end)
-				resetToOrbit()
+				fireProjectile(
+					orbPos + shootDir * 4,
+					shootDir,
+					220,
+					4,
+					1.5,
+					Color3.fromRGB(180, 80, 255),
+					Color3.fromRGB(200, 100, 255),
+					9,
+					22,
+					110,
+					140653132496955,
+					false,
+					orbData.part
+				)
 			end
 		end
 	end)
 end
 
-local function spawnApocalypseOrbsOnce()
-	if apocalypseOrbsSpawned then
+--========================
+-- Main heartbeat chase
+--========================
+local chaseConn
+chaseConn = trackConnection(RunService.Heartbeat:Connect(function(dt)
+	if not alive then
 		return
 	end
-	apocalypseOrbsSpawned = true
-	for i = 1, 5 do
-		spawnApocalypseRedOrb(i)
+
+	if not character or not character.Parent or not humanoidRootPart or not humanoidRootPart.Parent then
+		return
 	end
-end
 
-task.spawn(function()
-	while alive() do
-		task.wait(0.35)
-		if not alive() then
-			break
-		end
+	local toPlayer = humanoidRootPart.Position - hunter.Position
+	local dir = safeUnit(toPlayer, Vector3.new(0, 0, -1))
 
-		local p = progress()
-		local phase = currentPhase()
-		playPhaseMusic(phase)
+	-- Move hunter toward player
+	hunter.Position = hunter.Position + dir * currentSpeed * dt
+	hunter.CFrame = CFrame.lookAt(hunter.Position, humanoidRootPart.Position)
 
-		if phase == "Apocalypse" then
-			spawnApocalypseOrbsOnce()
-		end
+	-- Close-contact damage
+	local dist = (hunter.Position - humanoidRootPart.Position).Magnitude
+	if dist <= 5 and (os.clock() - hunterHitCooldown) >= 2 then
+		hunterHitCooldown = os.clock()
+		humanoid:TakeDamage(25)
 
-		if p < 0.20 then
-			if math.random() < 0.5 then
-				wormBuzz()
-			end
-			if math.random() < 0.25 then
-				orbitingSatelliteSpawner(math.random(1, 10))
-			end
-		elseif p < 0.45 then
-			if math.random() < 0.45 then
-				createCubeDrone(
-					Vector3.new(math.random(-90, 90), math.random(6, 20), math.random(-90, 90)),
-					math.random(2, 4),
-					8 + math.random(0, 10),
-					1 + math.random(0, 3)
-				)
-			end
-			if math.random() < 0.25 then
-				telegraphedMissile(
-					hrp.Position + Vector3.new(math.random(-120, 120), math.random(25, 55), math.random(-120, 120)),
-					hrp.Position + Vector3.new(math.random(-4, 4), math.random(-1, 4), math.random(-4, 4)),
-					60 + ramp() * 30,
-					2,
-					1,
-					0.5
-				)
-			end
-		elseif p < 0.75 then
-			if math.random() < 0.65 then
-				swarmOfCubes(math.random(4, 10))
-			end
-			if math.random() < 0.45 then
-				missileRing(math.random(4, 10))
-			end
-			if math.random() < 0.35 then
-				explosionRain()
-			end
-			if math.random() < 0.25 then
-				shriek()
-			end
-		else
-			if math.random() < 0.8 then
-				swarmOfCubes(math.random(8, 18))
-			end
-			if math.random() < 0.9 then
-				missileRing(math.random(10, 18))
-			end
-			if math.random() < 0.75 then
-				missileStorm()
-			end
-			if math.random() < 0.9 then
-				explosionRain()
-			end
-			if math.random() < 0.45 then
-				localNukeSequence()
-			end
-		end
-
-		if p > 0.85 and math.random() < 0.22 then
-			local pos = hrp.Position + Vector3.new(math.random(-20, 20), math.random(6, 18), math.random(-20, 20))
-			mushroomCloud(pos)
-		end
+		local knockDir = safeUnit(humanoidRootPart.Position - hunter.Position, Vector3.new(0, 1, 0))
+		humanoidRootPart.AssemblyLinearVelocity = knockDir * 160 + Vector3.new(0, 70, 0)
 	end
-end)
+end))
 
+--========================
+-- Main loop
+--========================
 task.spawn(function()
-	while alive() do
-		task.wait(0.12)
-		if not alive() then
-			break
+	while alive and (os.clock() - startTime) < 175 do
+		local elapsed = os.clock() - startTime
+
+		-- Phase transitions
+		if elapsed >= 135 and phase < 5 then
+			phase = 5
+			currentSpeed = currentSpeed * 3
+			hunter.Color = Color3.fromRGB(255, 255, 0)
+			hunterImage.ImageColor3 = Color3.fromRGB(255, 240, 100)
+
+			tintFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 100)
+			tintFrame.BackgroundTransparency = 0.4
+			TweenService:Create(tintFrame, TweenInfo.new(4, Enum.EasingStyle.Sine), { BackgroundTransparency = 1 }):Play()
+
+			playSound(112455888640044, 6, 1, workspace, false)
+			swapMusic(112455888640044, 4.5)
+
+		elseif elapsed >= 100 and phase < 4 then
+			phase = 4
+			currentSpeed = currentSpeed / 2
+
+			tintFrame.BackgroundColor3 = Color3.fromRGB(180, 80, 255)
+			tintFrame.BackgroundTransparency = 0.75
+			TweenService:Create(tintFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { BackgroundTransparency = 1 }):Play()
+
+			swapMusic(128316165656141, 4.5)
+			createOrbiters()
+
+		elseif elapsed >= 50 and phase < 3 then
+			phase = 3
+			currentSpeed = currentSpeed * 1.5
+			screenShake(9999, 8)
+
+			playSound(139310882854462, 5, 1, workspace, false)
+			swapMusic(120983654615021, 4.5)
+
+			tintFrame.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+			tintFrame.BackgroundTransparency = 0.65
+			TweenService:Create(tintFrame, TweenInfo.new(1, Enum.EasingStyle.Sine), { BackgroundTransparency = 0.65 }):Play()
+
+		elseif elapsed >= 25 and phase < 2 then
+			phase = 2
+			currentSpeed = currentSpeed * 2
+
+			swapMusic(139169543890320, 4.5)
+
+			tintFrame.BackgroundColor3 = Color3.fromRGB(255, 120, 120)
+			tintFrame.BackgroundTransparency = 0.85
+			TweenService:Create(tintFrame, TweenInfo.new(1, Enum.EasingStyle.Sine), { BackgroundTransparency = 0.85 }):Play()
 		end
 
-		local p = progress()
-		if p < 0.2 then
-			continue
+		-- Phase 1-2 projectile shot
+		if phase <= 2 and (elapsed - lastProjectileTime) >= ((phase == 1) and 7 or 5) then
+			lastProjectileTime = elapsed
+
+			local dir = safeUnit(humanoidRootPart.Position - hunter.Position, Vector3.new(0, 0, -1))
+			fireProjectile(
+				hunter.Position + dir * 4,
+				dir,
+				260,
+				5,
+				2.5,
+				Color3.fromRGB(255, 100, 0),
+				Color3.fromRGB(255, 140, 0),
+				10,
+				30,
+				130,
+				140653132496955,
+				false,
+				hunter
+			)
 		end
 
-		if math.random() < (0.08 + p * 0.22) then
-			local origin = hrp.Position + Vector3.new(math.random(-160, 160), math.random(20, 80), math.random(-160, 160))
-			local target = hrp.Position + Vector3.new(math.random(-5, 5), math.random(-1, 4), math.random(-5, 5))
-			telegraphedMissile(origin, target, 80 + p * 70, 2, math.floor(1 + p * 6), 0.35 + (1 - p) * 0.2)
-		end
-	end
-end)
+		-- Phase 3+ shotgun + rain
+		if phase >= 3 then
+			if (elapsed - lastShotgunTime) >= 1.8 then
+				lastShotgunTime = elapsed
+				local baseDir = safeUnit(humanoidRootPart.Position - hunter.Position, Vector3.new(0, 0, -1))
 
-task.spawn(function()
-	while alive() do
-		task.wait(1)
-		if not alive() then
-			break
-		end
+				for _ = 1, 8 do
+					local projDir = makeSpreadDirection(baseDir, 25)
+					local projColor = (phase == 5) and Color3.fromRGB(255, 255, 100) or Color3.fromRGB(255, 140, 0)
 
-		local p = progress()
-		local pos = hrp.Position + Vector3.new(math.random(-12, 12), math.random(-1, 10), math.random(-12, 12))
-		if p > 0.5 then
-			warningMarker(pos, 0.7)
-			task.delay(0.7, function()
-				if alive() then
-					explosionFlash(pos, 6 + math.floor(p * 7), 120000 + math.floor(p * 200000))
+					fireProjectile(
+						hunter.Position + projDir * 5,
+						projDir,
+						240,
+						4,
+						2.5,
+						projColor,
+						projColor,
+						10,
+						28,
+						125,
+						140653132496955,
+						false,
+						hunter
+					)
 				end
+			end
+
+			if (elapsed - lastFallingRainTime) >= 3 then
+				lastFallingRainTime = elapsed
+
+				for _ = 1, 5 do
+					local rainPos = humanoidRootPart.Position + Vector3.new(randf(-70, 70), 100, randf(-70, 70))
+					local rainColor = (phase == 5) and Color3.fromRGB(255, 255, 100) or Color3.fromRGB(255, 140, 0)
+					local fallDir = safeUnit(Vector3.new(randf(-0.25, 0.25), -1, randf(-0.25, 0.25)), Vector3.new(0, -1, 0))
+
+					fireProjectile(
+						rainPos,
+						fallDir,
+						140,
+						5,
+						2.5,
+						rainColor,
+						rainColor,
+						10,
+						28,
+						125,
+						140653132496955,
+						false,
+						hunter
+					)
+				end
+			end
+		end
+
+		-- Phase 2+ red burst ability
+		if phase >= 2 and (elapsed - lastRedBurstTime) >= 7 then
+			lastRedBurstTime = elapsed
+			local count = randi(1, 3)
+
+			for _ = 1, count do
+				local offset = Vector3.new(randf(-35, 35), randf(-8, 15), randf(-35, 35))
+				local burstPart = trackInstance(Instance.new("Part"))
+				burstPart.Name = "ChaosBurstPlate"
+				burstPart.Size = Vector3.new(20, 1, 20)
+				burstPart.Material = Enum.Material.Plastic
+				burstPart.Color = Color3.fromRGB(255, 40, 40)
+				burstPart.Transparency = 0.5
+				burstPart.Anchored = true
+				burstPart.CanCollide = false
+				burstPart.CanTouch = false
+				burstPart.CanQuery = false
+				burstPart.CFrame = CFrame.new(humanoidRootPart.Position + offset) * CFrame.Angles(
+					math.rad(randf(-180, 180)),
+					math.rad(randf(-180, 180)),
+					math.rad(randf(-180, 180))
+				)
+				burstPart.Parent = workspace
+
+				task.spawn(function()
+					for _ = 1, 6 do
+						if not alive or not burstPart.Parent then
+							return
+						end
+						burstPart.Transparency = (burstPart.Transparency == 0.5) and 0.9 or 0.5
+						task.wait(0.1)
+					end
+
+					if alive and burstPart.Parent then
+						createExplosion(burstPart.Position, 12, 30, 140, 140653132496955, Color3.fromRGB(255, 60, 60), false)
+					end
+
+					pcall(function()
+						burstPart:Destroy()
+					end)
+				end)
+			end
+		end
+
+		-- Phase 5 meteor spam
+		if phase == 5 and rng:NextNumber() < 0.12 then
+			local meteorPos = humanoidRootPart.Position + Vector3.new(randf(-80, 80), 140, randf(-80, 80))
+			local meteorColor = Color3.fromRGB(255, 255, 80)
+
+			fireProjectile(
+				meteorPos,
+				Vector3.new(randf(-0.15, 0.15), -1, randf(-0.15, 0.15)),
+				55,
+				6,
+				6,
+				meteorColor,
+				meteorColor,
+				22,
+				45,
+				220,
+				140653132496955,
+				true,
+				hunter
+			)
+		end
+
+		task.wait(0.01)
+	end
+
+	-- Final sequence
+	if alive then
+		screenShake(4, 35)
+		createExplosion(hunter.Position, 35, 0, 0, 140653132496955, Color3.fromRGB(255, 255, 100), true)
+
+		for i = 1, 6 do
+			task.delay(i * 0.12, function()
+				if not alive then
+					return
+				end
+
+				local ring = trackInstance(Instance.new("Part"))
+				ring.Name = "FinalRing"
+				ring.Shape = Enum.PartType.Ball
+				ring.Size = Vector3.new(5, 5, 5)
+				ring.CFrame = CFrame.new(hunter.Position)
+				ring.Material = Enum.Material.Neon
+				ring.Color = Color3.fromRGB(255, 255, 100)
+				ring.Transparency = 0.2
+				ring.Anchored = true
+				ring.CanCollide = false
+				ring.CanTouch = false
+				ring.CanQuery = false
+				ring.Parent = workspace
+
+				TweenService:Create(
+					ring,
+					TweenInfo.new(1.1, Enum.EasingStyle.Quad),
+					{ Size = Vector3.new(60, 60, 60), Transparency = 1 }
+				):Play()
+
+				task.delay(1.2, function()
+					pcall(function()
+						ring:Destroy()
+					end)
+				end)
 			end)
 		end
 
-		if p > 0.75 and math.random() < 0.35 then
-			applyKnockback(Vector3.new(math.random(-1, 1), 1, math.random(-1, 1)), 35 + p * 25)
+		for i = 1, 35 do
+			task.delay(i * 0.02, function()
+				if not alive then
+					return
+				end
+
+				local dir = safeUnit(Vector3.new(randf(-1, 1), randf(0, 1), randf(-1, 1)), Vector3.new(0, 1, 0))
+				local proj = trackInstance(Instance.new("Part"))
+				proj.Name = "FinalBurstProjectile"
+				proj.Size = Vector3.new(2.5, 2.5, 2.5)
+				proj.Material = Enum.Material.Neon
+				proj.Color = Color3.fromRGB(255, 255, 100)
+				proj.CFrame = CFrame.new(hunter.Position, hunter.Position + dir)
+				proj.Anchored = true
+				proj.CanCollide = false
+				proj.CanTouch = false
+				proj.CanQuery = false
+				proj.Parent = workspace
+
+				task.spawn(function()
+					local start = os.clock()
+					local pos = hunter.Position
+					while alive and proj.Parent and (os.clock() - start) < 2 do
+						local dt = RunService.Heartbeat:Wait()
+						pos = pos + dir * 180 * dt
+						proj.CFrame = CFrame.new(pos, pos + dir)
+
+						if (pos - humanoidRootPart.Position).Magnitude <= 10 then
+							createExplosion(pos, 10, 0, 0, 140653132496955, Color3.fromRGB(255, 255, 100), false)
+							break
+						end
+					end
+
+					pcall(function()
+						proj:Destroy()
+					end)
+				end)
+			end)
 		end
+
+		task.wait(1.6)
 	end
+
+	cleanupAll()
+	print("✅ CHAOS HUNTER FINISHED / CLEARED")
 end)
 
-task.spawn(function()
-	while running do
-		task.wait(0.2)
-		if not running then
-			break
-		end
-
-		if os.clock() - START_TIME >= DURATION then
-			break
-		end
+-- Optional: if the character respawns before this script has cleaned up, refresh refs safely.
+trackConnection(player.CharacterAdded:Connect(function(newCharacter)
+	if cleanedUp then
+		return
 	end
-
-	if not shuttingDown then
-		beginShutdown(true)
-	end
-end)
+	refreshCharacterRefs(newCharacter)
+end))
