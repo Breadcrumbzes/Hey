@@ -22,7 +22,7 @@ v.CanCollide = false
 			table.insert(torsoParts, v)
 		elseif c == "new yeller" then
 			table.insert(armParts, v)
-		elseif c == "deep orange" then
+		elseif v.Color == Color3.fromRGB(255,245,0) then
 			table.insert(headParts, v)
 		elseif v.Color == Color3.fromRGB(0,255,0) then
 			table.insert(legParts, v)			
