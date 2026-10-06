@@ -8716,7 +8716,7 @@ globalcolor = modes[mode].Color
         bang.Anchored = true
         bang.Position = position
         bang.Size = Vector3.new(1,1,1)
-
+        nonbab(bang)
         local bsound = Instance.new("Sound", bang)
         bsound.SoundId = "rbxassetid://139771888058836"
         bsound:Play()
@@ -8761,6 +8761,8 @@ globalcolor = modes[mode].Color
     end
 
     local function shotp()
+        local hitboom = false
+        local lifetime = 15
         local pellet = panel:Clone()
         pellet.Parent = workspace
 
@@ -8775,7 +8777,7 @@ globalcolor = modes[mode].Color
             math.rad(math.random(-15,15)),
             math.rad(math.random(-15,15))
         )
-
+        nonbab(pellet)
         pellet.Anchored = false
         pellet.CanCollide = false
         pellet.Size *= 0.4
@@ -8788,14 +8790,27 @@ globalcolor = modes[mode].Color
 
         local bodyvelocity = Instance.new("BodyVelocity", pellet)
         bodyvelocity.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
-        bodyvelocity.Velocity = pellet.CFrame.LookVector * 100
+        bodyvelocity.Velocity = pellet.CFrame.LookVector * 35
+        task.delay(lifetime, function()
+        if pellet and pellet.Parent then
+        pellet:Destroy()
+        end
+        end)
 
         pellet.Touched:Connect(function(hit)
-            if hit.CanCollide == true then
+
+            if hitboom == false and hit.CanCollide == true then
+                hitboom = true
                 pboom(pellet.Position)
 
                 if pellet and pellet.Parent then
+                    pellet.Anchored = true
+                    pdecal.Transparency = 1
+                    task.delay(1, function()
+                    if pellet and pellet.Parent then
                     pellet:Destroy()
+                    end
+                    end)
                 end
             end
         end)
