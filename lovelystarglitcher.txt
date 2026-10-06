@@ -1268,7 +1268,7 @@ if v and v.Parent then
 	local speechfolder = stuff:FindFirstChild("Speech")
 	local glitcherwings = nil
 	local glitchertitle = nil
-    globalcolor = Color3.FromRGB(255,0,0)
+    local globalcolor = Color3.FromRGB(255,0,0)
 	stuff.Parent = ReplicatedStorage
 	local charao = nil
 	local Players = game:GetService("Players")
