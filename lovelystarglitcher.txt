@@ -8963,7 +8963,7 @@ updateKeyTools()
 		createAbilityTool("M1", TextLabelM1)
 	end
 end
-task.delay(5, function()
+task.delay(7, function()
 updateKeyTools()
 end)
 end
