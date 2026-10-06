@@ -1,4 +1,3 @@
-print("A: script loaded")
 local scriptended = false
 local pastparts = {}
 local deads = {}
