@@ -8912,9 +8912,7 @@ local function updateKeyTools()
 updateKeyTools()
 		end)
 	end
-task.delay(5, function()
-updateKeyTools()
-end)
+
 	if current.Modes then
 		for nextMode, key in pairs(current.Modes) do
 			createModeTool(key, nextMode)
@@ -8965,8 +8963,9 @@ end)
 		createAbilityTool("M1", TextLabelM1)
 	end
 end
-
-
+task.delay(5, function()
+updateKeyTools()
+end)
 end
 thechar = "ColorGuy"
 idthing = 4751190650
