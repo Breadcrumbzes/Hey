@@ -8891,9 +8891,7 @@ local function updateKeyTools()
 			callback()
 		end)
 	end
-task.delay(1, function()
-updateKeyTools()
-end)
+
 	local function createModeTool(key, modeName)
 		createtool(key, function()
 			if not glitchercharacter or not glitchercharacter.Parent or not rootp or not rootp.Parent or not running then
@@ -8914,7 +8912,9 @@ end)
 updateKeyTools()
 		end)
 	end
-
+task.delay(5, function()
+updateKeyTools()
+end)
 	if current.Modes then
 		for nextMode, key in pairs(current.Modes) do
 			createModeTool(key, nextMode)
