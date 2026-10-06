@@ -4331,6 +4331,43 @@ globalcolor = modes[mode].Color
 					end
 				end
 			end)
+        elseif modey == "Memer" then
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp and hrp.Parent then
+        local finishchar = Players:CreateHumanoidModelFromDescriptionAsync(Instance.new("HumanoidDescription"), Enum.HumanoidRigType.R6)
+        finishchar.Parent = workspace
+        finishchar:PivotTo(hrp.CFrame)
+        local fhrp = finishchar:FindFirstChild("HumanoidRootPart")
+        local fhum = finishchar:FindFirstChildOfClass("Humanoid")
+        for i,v in pairs(finishchar:GetDescendants()) do
+        if v:IsA("BasePart") then
+        v.Material = Enum.Material.Neon
+        v.Color = globalcolor
+        if fhrp and fhrp.Parent and fhum and fhum.Parent then
+        fhum.PlatformStand = true
+        local yell = Instance.new("Sound", fhrp)
+        yell.SoundId = "rbxassetid://80797776108679"
+        yell:Play()
+        local bv = Instance.new("BodyVelocity",fhrp)
+        bv.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
+        bv.Velocity = Vector3.new(math.random(-30,30), math.random(-15,30), math.random(-30,30))
+        local ba = Instance.new("BodyAngularVelocity", fhrp)
+        ba.MaxTorque = Vector3.new(math.huge,math.huge,math.huge)
+        ba.AngularVelocity = Vector3.new(math.random(-360,360), math.random(-360,360), math.random(-360,360))
+        end
+        end
+        end
+        task.delay(5, function()
+        if finishchar and finishchar.Parent then
+        finishchar:Destroy()
+        end
+        end)
+        for i,v in pairs(character:GetDescendants()) do
+		if v:IsA("BasePart") then
+		table.insert(delete, v)
+        end
+        end
+        end        
 		elseif modey == "TextLabel" then
 			for i,v in pairs(character:GetDescendants()) do
 				if v:IsA("BasePart") then
