@@ -1302,18 +1302,6 @@ if v and v.Parent then
 		end
     elseif thechar == "ColorGuy" then
    charao = Players:CreateHumanoidModelFromDescriptionAsync(Instance.new("HumanoidDescription"), Enum.HumanoidRigType.R6)
-   task.spawn(function()
-   while true do
-   task.wait(0.2)
-   if charao and charao.Parent then
-   for i,v in pairs(charao:GetDescendants()) do
-   if v:IsA("BasePart") then
-   v.Color = globalcolor
-   end
-   end
-   end
-   end
-   end)
    end
 
 
@@ -1323,6 +1311,20 @@ if v and v.Parent then
 	glitchery.Name = "The Star Glitcher"
 	glitchery.Parent = workspace
 	glitchery:PivotTo(oldcharacter:GetPivot() * CFrame.new(0,10,0))
+    if thechar == "ColorGuy" then
+    task.spawn(function()
+   while true do
+   task.wait(0.2)
+   if glitchery and glitchery.Parent then
+   for i,v in pairs(glitchery:GetDescendants()) do
+   if v:IsA("BasePart") then
+   v.Color = globalcolor
+   end
+   end
+   end
+   end
+   end)
+    end
 	local humanoid = glitchery:FindFirstChildOfClass("Humanoid")
 	local charactertype = "R6"
 	if humanoid then
@@ -2896,7 +2898,9 @@ for _,v in pairs(glitchery:GetDescendants()) do
 
 	local function swap(mode)
 		if not modes[mode] then return end
+        if not mode == "TheBigBlack" then
         globalcolor = modes[mode].Color
+end
 		local special = false
 		if glitchercharacter then
 			for i,v in pairs(glitchercharacter:GetDescendants()) do
